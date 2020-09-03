@@ -9,6 +9,7 @@
 //2. Hacer clic derecho en Cliente.java y hacer clic en Run File
 //El programa empezará con un JFrame con el panel de inicio de sesión
 
+//asdasd
 package practica.pkgfinal.mtpa;
 
 import java.io.DataInputStream;
