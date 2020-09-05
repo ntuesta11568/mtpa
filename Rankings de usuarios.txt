@@ -1,3 +1,4 @@
 1;#nelson;20;100
 2;#juan;0;0
-3;#test;40;200
+3;#manolo;0;0
+4;#pablo;0;0

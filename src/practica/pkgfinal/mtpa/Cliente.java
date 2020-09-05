@@ -1,15 +1,3 @@
-//Programa compilado con NetBeans IDE 8.2 en Windows 10 versión 1903 (compilación de SO 18362.1016)
-//Versión de Java:
-//java version "11.0.7" 2020-04-14 LTS
-//Java(TM) SE Runtime Environment 18.9 (build 11.0.7+8-LTS)
-//Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11.0.7+8-LTS, mixed mode)
-
-//Para compilar este programa:
-//1. Hacer clic derecho en Servidor.java y hacer clic en Run File
-//2. Hacer clic derecho en Cliente.java y hacer clic en Run File
-//El programa empezará con un JFrame con el panel de inicio de sesión
-
-//asdasd
 package practica.pkgfinal.mtpa;
 
 import java.io.DataInputStream;
@@ -25,14 +13,25 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import java.net.Socket;
-import java.util.ArrayList;
 import javax.swing.JDialog;
 
 import javax.swing.JLabel;
 import javax.swing.WindowConstants;
 
+/**
+ * Esta clase representa a todo usuario que se conecta al sistema. Esta clase es
+ * la que se encarga de controlar los elementos de Java Swing que le llegan desde
+ * la Clase Panel mediante setters y getters
+ * @author Nelson Tuesta Fernández
+ * @version 4.0
+ * @since 05/09/2020
+ */
 public class Cliente{
     
+    /**
+     * Estos JLabel muestran errores/mensajes de éxito cuando el usuario realiza
+     * alguna acción en alguno de los paneles
+     */
     private static JLabel errorDatosIncompletos;
     private static JLabel errorDatosIncorrectos;
     private static JLabel errorDatosIncompletos2;
@@ -49,11 +48,21 @@ public class Cliente{
     private static JLabel errorTipoRankingNoElegido;
     private static JLabel elegirTipoRankingCompletado;
     
+    /**
+     * Estos cuatro objetos son el panel y los tres JDialog que usa mi programa.
+     * Los JDialog los uso para poder mostrar las tablas de manera correcta
+     */
     private static Panel miPanel = new Panel();
     private static JDialog dialogUsuariosConectados = new JDialog(miPanel, false);
     private static JDialog dialogMisRetos = new JDialog(miPanel, false);
     private static JDialog dialogVerRankings = new JDialog(miPanel, false);
     
+    
+    /**
+     * Todos estos objetos son variables de tipo String y boolean que se usan
+     * para recoger la información que ha indicado el usuario en la interfaz,
+     * para indicar qué botones han sido pulsados o qué opciones ha elegido
+     */
     private static String usuarioInicioSesion;
     private static String passwordInicioSesion;
     private static String usuarioRegistro;
@@ -75,11 +84,11 @@ public class Cliente{
     private static boolean rankingActualizadoConExito;
     private static boolean atrasRankings;
     private static boolean actualizarRanking;
-       
-    public Cliente(String aUsuarioInicioSesion){
-        usuarioInicioSesion = aUsuarioInicioSesion;
-    }
     
+    /**
+     * Método main de la clase Cliente
+     * @param args Argumentos del main
+     */
     public static void main(String[] args) {
         final String HOST = "127.0.0.1";
         final int serverPort = 9999;
@@ -89,6 +98,7 @@ public class Cliente{
         boolean registrateAqui = false;
         boolean volverAtras = false;
         boolean lanzarUnReto = false;
+        boolean actualizarJugadoresConectados = false;
         boolean panelCuatro = false;
         boolean panelCinco = false;
         boolean conectar = false;
@@ -115,35 +125,36 @@ public class Cliente{
             
             miPanel.addComponentListener(new ComponentAdapter() {
                 Point ultimaUbicacion;
+                //Point nuevaUbicacion;
                 
                 @Override
                 public void componentMoved(ComponentEvent e){
-                    
-                    dialogMisRetos.setAlwaysOnTop(true);
-                    dialogUsuariosConectados.setAlwaysOnTop(true);
-                    dialogVerRankings.setAlwaysOnTop(true);
-                    
-                    dialogMisRetos.toFront();
-                    dialogUsuariosConectados.toFront();
-                    dialogVerRankings.toFront();
-                    
-                    if(ultimaUbicacion == null && miPanel.isVisible()){
-                        
-                        ultimaUbicacion = miPanel.getLocation();
-                        
-                    }else{
-                        Point nuevaUbicacion = miPanel.getLocation();
-                        int dx = nuevaUbicacion.x - ultimaUbicacion.x;
-                        int dy = nuevaUbicacion.y - ultimaUbicacion.y;
-                        
-                        dialogMisRetos.setLocation(dialogMisRetos.getX() + dx, dialogMisRetos.getY() + dy);
-                        dialogUsuariosConectados.setLocation(dialogUsuariosConectados.getX() + dx, dialogUsuariosConectados.getY() + dy);
-                        dialogVerRankings.setLocation(dialogVerRankings.getX() + dx, dialogVerRankings.getY() + dy);
-                        
-                        
-                        ultimaUbicacion = nuevaUbicacion;
-                        
-                    }
+                    try{
+                        dialogMisRetos.setAlwaysOnTop(true);
+                        getDialogUsuariosConectados().setAlwaysOnTop(true);
+                        dialogVerRankings.setAlwaysOnTop(true);
+
+                        dialogMisRetos.toFront();
+                        getDialogUsuariosConectados().toFront();
+                        dialogVerRankings.toFront();
+
+                        if(ultimaUbicacion == null && miPanel.isVisible()){
+
+                            ultimaUbicacion = miPanel.getLocation();
+
+                        }else{
+                            Point nuevaUbicacion = miPanel.getLocation();
+                            int dx = nuevaUbicacion.x - ultimaUbicacion.x;
+                            int dy = nuevaUbicacion.y - ultimaUbicacion.y;
+
+                            dialogMisRetos.setLocation(dialogMisRetos.getX() + dx, dialogMisRetos.getY() + dy);
+                            getDialogUsuariosConectados().setLocation(getDialogUsuariosConectados().getX() + dx, getDialogUsuariosConectados().getY() + dy);
+                            dialogVerRankings.setLocation(dialogVerRankings.getX() + dx, dialogVerRankings.getY() + dy);
+
+                            ultimaUbicacion = nuevaUbicacion;
+
+                        }
+                    }catch(NullPointerException npe){}
                 }
             });
             
@@ -151,22 +162,20 @@ public class Cliente{
                 @Override
                 public void windowIconified(WindowEvent e){
                     dialogMisRetos.setAlwaysOnTop(false);
-                    dialogUsuariosConectados.setAlwaysOnTop(false);
+                    getDialogUsuariosConectados().setAlwaysOnTop(false);
                     dialogVerRankings.setAlwaysOnTop(false);
                     
                     dialogMisRetos.toBack();
-                    dialogUsuariosConectados.toBack();
+                    getDialogUsuariosConectados().toBack();
                     dialogVerRankings.toBack();
                     
                 }
                 
             });
             
-            
             dialogMisRetos.setLocationRelativeTo(miPanel);
             dialogUsuariosConectados.setLocationRelativeTo(miPanel);
             dialogVerRankings.setLocationRelativeTo(miPanel);
-            //misRetos.setVisible(true);
             
             do{
 
@@ -220,8 +229,9 @@ public class Cliente{
                                         miPanel.setTipoPanel(3);
                                         miPanel.cambiaPanel(3);
                                         ocultarErrores();
-                                        
-                                        conectar = marcarJugadoresOnline(new Cliente(usuarioInicioSesion));
+                                                                                
+                                        //conectar = marcarJugadoresOnline(new Servidor(usuarioInicioSesion));
+                                        conectar = Connection.marcarJugadoresOnline(new Servidor(usuarioInicioSesion));
                                         
                                         if(conectar){
                                             System.out.println("Sesión iniciada como: #" + usuarioInicioSesion);
@@ -373,6 +383,7 @@ public class Cliente{
                             setIrAlPanelCinco(false);
                             
                             lanzarUnReto = miPanel.isLanzarRetoPulsado();
+                            actualizarJugadoresConectados = miPanel.isActualizarListaPulsado();
                             panelCuatro = miPanel.isTemporalUnoPulsado();
                             panelCinco = miPanel.isTemporalDosPulsado();
                             
@@ -446,6 +457,21 @@ public class Cliente{
                                         break;
                                         
                                 }
+                            }
+                            
+                            if(actualizarJugadoresConectados){
+                                System.out.print(" ");
+                                System.out.print("\b");
+                                
+                                dialogUsuariosConectados = new TablaPersonalizada(3);
+                                dialogUsuariosConectados.setSize(403, 100);
+                                dialogUsuariosConectados.setLocation((dim.width/2 - dialogUsuariosConectados.getSize().width/2) - 220,
+                                                                (dim.height/2 - dialogUsuariosConectados.getSize().height/2) + 190);
+                                dialogUsuariosConectados.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                                dialogUsuariosConectados.setUndecorated(true);
+                                dialogUsuariosConectados.setType(JDialog.Type.UTILITY);
+                                dialogUsuariosConectados.setVisible(true);
+                                
                             }
                         }
                         
@@ -552,21 +578,7 @@ public class Cliente{
                                         dialogVerRankings.setUndecorated(true);
                                         dialogVerRankings.setType(JDialog.Type.UTILITY);
                                         dialogVerRankings.setVisible(true);
-                                        
-                                        /*
-                                        tipoErrorConsultarRanking = consultarRanking(in, out, tipoRankingElegido);
-                                        
-                                        switch(tipoErrorConsultarRanking){
-                                            case "ningunError":
-                                                break;
-                                                
-                                            case "errorDeFichero":
-                                                System.out.println("Se ha producido un error al consultar el fichero de los rankings");
-                                                break;
-                                                
-                                            //No añado default porque quiero que haga lo mismo que el case "errorDeFichero"
-                                        }
-                                        */
+
                                         setRankingActualizadoConExito(true);
                                         break;
                                         
@@ -588,8 +600,6 @@ public class Cliente{
                         
                     case 7: //Salir
                         System.out.println("Saliendo del juego...");
-                        
-                        //REVISAR. Organizar bien la forma de desconectar. Pensar las distintas formas de salir (pero creo que no hace falta)
                         salirDelJuego(in, out);
                         break;
                         
@@ -607,6 +617,12 @@ public class Cliente{
         }
     }
     
+    /**
+     * Método para salir del juego y cerrar la conexión con el servidor
+     * @param in El DataInputStream que conecta con la clase Servidor
+     * @param out El DataOutputStream que conecta con la clase Servidor
+     * @throws IOException Cuando se produzca un error en la llamada a los InputStream
+     */
     public static void salirDelJuego(DataInputStream in, DataOutputStream out) throws IOException{
         
         DataInputStream in2 = in;
@@ -617,6 +633,12 @@ public class Cliente{
         boolean cerrarConexion = in2.readBoolean();
     }
     
+    /**
+     * Método para ocultar todos los JLabel de los errores. Cada vez que se vaya
+     * a cambiar de panel o se vaya a mostrar un error hay que llamar a este método
+     * para evitar que se "amontonen" los errores o que se muestren en un panel
+     * incorrecto
+     */
     public static void ocultarErrores(){
          
         if(miPanel.getDatosIncorrectos().isVisible()){
@@ -664,35 +686,16 @@ public class Cliente{
         }
     }
     
-    //Hacerlo en el servidor
-    private static ArrayList<Cliente> jugadoresConectados = new ArrayList<>();
-    
-    public static ArrayList<Cliente> devuelveJugadores(){
-        return jugadoresConectados;
-    }
-    
-    public static boolean marcarJugadoresOnline(Cliente cl){
-        boolean estado = false;
-        estado = jugadoresConectados.add(cl);
-        return estado;
-    }
-    
-    public static boolean marcarJugadoresOffline(Cliente cl){
-        boolean estado = false;
-        estado = jugadoresConectados.remove(cl);
-        return estado;
-    }
-    
-    public static Cliente buscaJugador(){
-        Cliente cl = null;
-        
-        for(int i=0; i< jugadoresConectados.size(); i++){
-            cl = jugadoresConectados.get(i);
-        }
-        
-        return cl;
-    }
-    
+    /**
+     * Método para notificar al servidor que compruebe el inicio de sesión
+     * @param in El DataInputStream que conecta con la clase Servidor
+     * @param out El DataOutputSream que conecta con la clase Servidor
+     * @param usuarioInicioSesion El nombre que el usuario ha introducido para iniciar sesión
+     * @param passwordInicioSesion La contraseña que el usuario ha introducido para iniciar sesión
+     * @return El tipo de error que se ha producido (si todo ha ido bien este valor
+     * será "ningunError")
+     * @throws IOException Cuando se produzca un error en la llamada a los InputStream
+     */
     public static String comprobarInicioSesion(DataInputStream in, DataOutputStream out, String usuarioInicioSesion, String passwordInicioSesion) throws IOException{
         DataInputStream in2 = in;
         DataOutputStream out2 = out;
@@ -709,6 +712,17 @@ public class Cliente{
         return errorStringInicioSesion;
     }
     
+    /**
+     * Método para notificar al servidor que compruebe el registro de un nuevo usuario en el sistema
+     * @param in El DataInputStream que conecta con la clase Servidor
+     * @param out El DataOutputSream que conecta con la clase Servidor
+     * @param usuarioRegistro El nombre que el usuario ha introducido para registrarse
+     * @param passRegistro La contraseña que el usuario ha introducido para registrarse
+     * @param passConfirmRegistro La confirmación de la contraseña que el usuario ha introducido para registrarse
+     * @return El tipo de error que se ha producido (si todo va bien este valor
+     * será "ningunError")
+     * @throws IOException Cuando se produzca un error en la llamada a los InputStream
+     */
     public static String comprobarRegistro(DataInputStream in, DataOutputStream out, String usuarioRegistro, String passRegistro, String passConfirmRegistro) throws IOException{
         DataInputStream in2 = in;
         DataOutputStream out2 = out;
@@ -727,6 +741,19 @@ public class Cliente{
         return errorStringRegistro;
     }
     
+    
+    /**
+     * Método para notificar al servidor que compruebe las condiciones de un reto cuando es lanzado por un usuario
+     * @param in El DataInputStream que conecta con la clase Servidor
+     * @param out El DataOutputStream que conecta con la clase Servidor
+     * @param modalidad La condición de victoria de la partida
+     * @param numTandas El número de tandas de la partida
+     * @param tiempo El tiempo en segundos por tanda de la partida
+     * @param oponenteReto El nick oponente con el que el usuario quiere enfrentarse
+     * @return El tipo de error que se ha producido (si todo va bien este valor
+     * será "ningunError")
+     * @throws IOException Cuando se produzca un error en la llamada a los InputStream
+     */
     public static String comprobarLanzarReto(DataInputStream in, DataOutputStream out, String modalidad, String numTandas, String tiempo, String oponenteReto) throws IOException{
         
         DataInputStream in2 = in;
@@ -748,6 +775,16 @@ public class Cliente{
         return errorStringLanzarReto;
     }
     
+    
+    /**
+     * Método que sirve para comprobar el filtro de ordenación del ranking elegido por el usuario
+     * @param in El DataInputStream que conecta con la clase Servidor
+     * @param out El DataOutputStream que conecta con la clase Servidor
+     * @param tipoRankingElegido El filtro elegido para el ranking
+     * @return El tipo de error que se ha producido (si todo va bien este valor
+     * será "ningunError")
+     * @throws IOException Cuando se produzca un error en la llamada a los InputStream
+     */
     public static String comprobarTipoRanking(DataInputStream in, DataOutputStream out, String tipoRankingElegido) throws IOException{
         DataInputStream in2 = in;
         DataOutputStream out2 = out;
@@ -762,6 +799,8 @@ public class Cliente{
         return errorStringTipoRanking;
     }
 
+    //Todos los métodos que hay a partir de aquí son getters y setters
+    
     public static String getUsuarioInicioSesion() {
         return usuarioInicioSesion;
     }
@@ -888,5 +927,13 @@ public class Cliente{
 
     public static void setTipoRankingElegido(String aTipoRankingElegido) {
         tipoRankingElegido = aTipoRankingElegido;
+    }
+
+    public static JDialog getDialogUsuariosConectados() {
+        return dialogUsuariosConectados;
+    }
+
+    public static void setDialogUsuariosConectados(JDialog aDialogUsuariosConectados) {
+        dialogUsuariosConectados = aDialogUsuariosConectados;
     }
 }

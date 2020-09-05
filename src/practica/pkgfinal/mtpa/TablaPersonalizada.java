@@ -15,9 +15,16 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 
+import static practica.pkgfinal.mtpa.Connection.ficheroRegistros;
 import static practica.pkgfinal.mtpa.Connection.ficheroRankings;
 
-
+/**
+ * Clase que permite crear una tabla personalizada mediante AbstractTableModel.
+ * Se usa para crear las diferentes tablas de mi programa
+ * @author Nelson Tuesta Fernández
+ * @version 4.0
+ * @since 05/09/2020
+ */
 public class TablaPersonalizada extends JDialog{
     
     private static JTable tablaMisRetos = null;
@@ -29,7 +36,10 @@ public class TablaPersonalizada extends JDialog{
     private static JTable tablaRankings = null;
     private static TableModel modeloRankings = null;
     
-    
+    /**
+     * Constructor de la clase
+     * @param tipoTabla El tipo de tabla a crear
+     */
     public TablaPersonalizada(int tipoTabla){
         
         if(tipoTabla == 1){ //Tabla de mis retos
@@ -43,6 +53,24 @@ public class TablaPersonalizada extends JDialog{
             tablaMisRetos.getTableHeader().setReorderingAllowed(false);
             tablaMisRetos.getTableHeader().setResizingAllowed(false);
             tablaMisRetos.setEnabled(false);
+            tablaMisRetos.setVisible(true);
+        }
+        
+        if(tipoTabla == 2){ //Tabla de retos del rival
+            
+        }
+        
+        if(tipoTabla == 3){ //Tabla de usuarios conectados
+            
+            modeloUsuariosConectados = new MTPUsuariosConectados();
+            tablaUsuariosConectados = new JTable(modeloUsuariosConectados);
+            
+            add(new JScrollPane(tablaUsuariosConectados));
+            
+            tablaUsuariosConectados.getTableHeader().setReorderingAllowed(false);
+            tablaUsuariosConectados.getTableHeader().setResizingAllowed(false);
+            tablaUsuariosConectados.setEnabled(false);
+            tablaUsuariosConectados.setVisible(true);
         }
         
         if(tipoTabla == 4){ //Tabla de los rankings
@@ -55,12 +83,9 @@ public class TablaPersonalizada extends JDialog{
             tablaRankings.getColumnModel().getColumn(0).setPreferredWidth(5);
             tablaRankings.getColumnModel().getColumn(2).setPreferredWidth(40);
             tablaRankings.getColumnModel().getColumn(3).setPreferredWidth(40);
-            //tablaRankings.getTableHeader().setReorderingAllowed(false);
-            //tablaRankings.getTableHeader().setResizingAllowed(false);
-            //tablaRankings.setEnabled(false);
-            //tablaRankings.getTableHeader().setReorderingAllowed(true);
-            //tablaRankings.getTableHeader().setResizingAllowed(true);
-            //tablaRankings.setEnabled(true);
+            tablaRankings.getTableHeader().setReorderingAllowed(false);
+            tablaRankings.getTableHeader().setResizingAllowed(false);
+            tablaRankings.setEnabled(false);
             
             tablaRankings.setVisible(false);
             
@@ -83,27 +108,26 @@ public class TablaPersonalizada extends JDialog{
                 int valorTandaInt = Integer.parseInt(valorTandaString);
                 arrayPartidasGanadas[i] = valorPartidaInt;
                 arrayTandasGanadas[i] = valorTandaInt;
-            }
-            
-            
+            }            
             
             //En función del filtro del cliente ordenamos por partidas o por tandas 
             String modo = "";
             if(Cliente.getTipoRankingElegido().equals("Ordenar por partidas ganadas")){
                 modo = "partidas";
                 ordenarBurbuja(arrayPartidasGanadas);
+                System.out.println("Ordenación por partidas:");
                 mostrarArrayburbuja(arrayPartidasGanadas);
                 organizarTablaBurbuja(arrayPartidasGanadas, modo);
                 
             }else if(Cliente.getTipoRankingElegido().equals("Ordenar por tandas ganadas")){
                 modo = "tandas";
                 ordenarBurbuja(arrayTandasGanadas);
+                System.out.println("Ordenación por tandas:");
                 mostrarArrayburbuja(arrayTandasGanadas);
                 organizarTablaBurbuja(arrayTandasGanadas, modo);
             }
             
             //Añadimos un listener a nuestro TableModel para que se actualize la tabla cuando se ordene
-            
             tablaRankings.getModel().addTableModelListener(new TableModelListener() {
                 @Override
                 public void tableChanged(TableModelEvent e) {
@@ -126,7 +150,11 @@ public class TablaPersonalizada extends JDialog{
         }
 
     }
-    
+
+    /**
+     * Método que ordena un array por el método de ordenación de la burbuja
+     * @param array El array a ordenar
+     */
     public static void ordenarBurbuja(int array[]){
         int n = array.length;
         
@@ -141,7 +169,11 @@ public class TablaPersonalizada extends JDialog{
         }
     }
     
-    
+    /**
+     * Método que organiza la tabla en función del array ordenado y el modo indicado
+     * @param array El array base organizado
+     * @param modo El modo de ordenación (por partidas o por tandas)
+     */
     public static void organizarTablaBurbuja(int array[], String modo){
         int n = array.length;
         int columnaAOrganizar = 1;
@@ -157,6 +189,10 @@ public class TablaPersonalizada extends JDialog{
         }
     }
     
+    /**
+     * Método que muestra un array que previamente ha sido ordenado por el método burbuja
+     * @param array El array a mostrar
+     */
     public static void mostrarArrayburbuja(int array[]){
         int n = array.length;
         
@@ -169,6 +205,8 @@ public class TablaPersonalizada extends JDialog{
         }
         System.out.println("");
     }
+    
+    //Setters y getters
 
     public static JTable getTablaMisRetos() {
         return tablaMisRetos;
@@ -177,15 +215,23 @@ public class TablaPersonalizada extends JDialog{
     public static void setTablaMisRetos(JTable aTablaMisRetos) {
         tablaMisRetos = aTablaMisRetos;
     }
+    
 }
 
 //MTP = ModeloTablaPersonalizada
+
+/**
+ * Clase que crea una tabla con los rankings
+ * @author Nelson Tuesta Fernández
+ * @version 4.0
+ * @since 05/09/2020
+ */
 class MTPRankings extends AbstractTableModel{
     /*
-        La estructura del fichero de rankings es la siguiente: tres campos (nick,
-        partidas ganadas y tandas ganadas) separados cada uno por un punto y coma.
+        La estructura del fichero de rankings es la siguiente: cuatro campos (posición,
+        nick, partidas ganadas y tandas ganadas) separados cada uno por un punto y coma.
 
-        Ejemplo: #nelson;20;100
+        Ejemplo: 1;#nelson;20;100
 
         Esto quiere decir que #nelson ha ganado un total de 20 partidas y 100 tandas
     */
@@ -193,6 +239,9 @@ class MTPRankings extends AbstractTableModel{
     Vector datos;
     int posicion = 0;
     
+    /**
+     * Constructor
+     */
     public MTPRankings(){
         
         String linea;
@@ -256,7 +305,12 @@ class MTPRankings extends AbstractTableModel{
     
 }
 
-
+/**
+ * Clase que crea una tabla con los retos enviados por el usuario
+ * @author Nelson Tuesta Fernández
+ * @version 4.0
+ * @since 05/09/2020
+ */
 class MTPMisRetos extends AbstractTableModel{
     
     @Override
@@ -278,7 +332,7 @@ class MTPMisRetos extends AbstractTableModel{
         String tiempo = "null";
         
         if(Cliente.isRetoLanzadoConExito()){
-            for(i=0; i<Cliente.devuelveJugadores().size(); i++){
+            for(i=0; i<Connection.devuelveJugadores().size(); i++){
                 //Cliente cl = Cliente.devuelveJugadores().get(i);
                 rival = Cliente.getOponenteReto();
                 modalidad = Cliente.getModalidad();
@@ -435,43 +489,111 @@ class MTPMisRetos extends AbstractTableModel{
     
 }
 
-class MTPRetosRival{
-    
-}
-
-class MTPUsuariosConectados extends AbstractTableModel{
+/**
+ * Clase que crea una tabla con los retos que recibe el usuario
+ * @author Nelson Tuesta Fernández
+ * @version 4.0
+ * @since 05/09/2020
+ * @deprecated Falta implementación
+ */
+class MTPRetosRival extends AbstractTableModel{
 
     @Override
     public int getRowCount() {
-        return 2; //REVISAR
+        return 1;
     }
 
     @Override
     public int getColumnCount() {
-        return 1; //REVISAR
+        return 1;
     }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        return ""; //REVISAR
+        return "";
     }
     
 }
 
-/*//CUIDADO. Todo esto es de otro Table (el de jugadores conectados)
-        int i;
-        JTextArea jugadoresOnline = null;
+
+/**
+ * Clase que crea una tabla con los usuarios conectados
+ * @author Nelson Tuesta Fernández
+ * @version 4.0
+ * @since 05/09/2020
+ */
+class MTPUsuariosConectados extends AbstractTableModel{
+    
+    FileReader fr = null;
+    BufferedReader br = null;
+    String linea = "";
+    String token = "";
+    Vector nicks;
+    
+    /**
+     * Constructor
+     */
+    public MTPUsuariosConectados(){
         
-        for(i=0; i<Cliente.devuelveJugadores().size(); i++){
-        //for(i=0; i<20; i++){
-            jugadoresOnline = Panel.getListaUsuariosConectados();
-            jugadoresOnline.setText("#" + Cliente.getUsuarioInicioSesion());
+        FileReader fr = null;
+        BufferedReader br = null;
+        StringTokenizer st = null;
+        String nick = "";        
+        nicks = new Vector();
+        
+        try{
+            
+            fr = new FileReader(ficheroRegistros);
+            br = new BufferedReader(fr);
+            int numTokens = 1;
+            
+            while((linea = br.readLine()) != null){
+
+                st = new StringTokenizer(linea, ";");
+
+                while(st.hasMoreTokens()){
+                    nicks.addElement(st.nextToken());
+                }
+            }
+            
+            br.close();
+
+        }catch(Exception ioe){
+            System.out.println(ioe.toString());
         }
-        return i; //i valdrá en este punto el número total de jugadores (que será el número de filas de la tabla)
-        */
-        /*
-        if(Panel.isLanzarRetoPulsado()){
-            numFilas++;
+                
+    }
+    
+    @Override
+    public int getRowCount() {
+        return nicks.size() / getColumnCount();
+    }
+
+    @Override
+    public int getColumnCount() {
+        return 2;
+    }
+
+    @Override
+    public Object getValueAt(int rowIndex, int columnIndex) {
+        if(columnIndex == 0){
+            return (String) nicks.elementAt((rowIndex * getColumnCount()) + columnIndex);
+            
+        }else if(columnIndex == 1){
+            return "Desconectado"; /** @deprectaded Configurar esto cuando se arregle el problema de los ArrayList*/
         }
-        */
-        //return getRowCount();
+        
+        return "";
+    }
+    
+    @Override
+    public String getColumnName(int i){
+        if(i == 0){
+            return "Nick";
+        }else if(i == 1){
+            return "Estado";
+        }
+        return "";
+    }
+    
+}
