@@ -1,8 +1,10 @@
 package practica.pkgfinal.mtpa;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -15,8 +17,8 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 
-import static practica.pkgfinal.mtpa.Connection.ficheroRegistros;
 import static practica.pkgfinal.mtpa.Connection.ficheroRankings;
+import static practica.pkgfinal.mtpa.Connection.ficheroUsuariosRetados;
 
 /**
  * Clase que permite crear una tabla personalizada mediante AbstractTableModel.
@@ -47,7 +49,6 @@ public class TablaPersonalizada extends JDialog{
             tablaMisRetos = new JTable(modeloMisRetos);
         
             add(new JScrollPane(tablaMisRetos));
-        
             tablaMisRetos.getColumnModel().getColumn(0).setPreferredWidth(125);
             tablaMisRetos.getColumnModel().getColumn(1).setPreferredWidth(165);
             tablaMisRetos.getTableHeader().setReorderingAllowed(false);
@@ -71,12 +72,12 @@ public class TablaPersonalizada extends JDialog{
             tablaUsuariosConectados.getTableHeader().setResizingAllowed(false);
             tablaUsuariosConectados.setEnabled(false);
             tablaUsuariosConectados.setVisible(true);
+            
         }
         
         if(tipoTabla == 4){ //Tabla de los rankings
             modeloRankings = new MTPRankings();
-            tablaRankings = new JTable();
-            tablaRankings.setModel(modeloRankings);
+            tablaRankings = new JTable(modeloRankings);
 
             add(new JScrollPane(tablaRankings));
 
@@ -208,6 +209,14 @@ public class TablaPersonalizada extends JDialog{
     
     //Setters y getters
 
+    public static TableModel getModeloMisRetos() {
+        return modeloMisRetos;
+    }
+
+    public static void setModeloMisRetos(TableModel aModeloMisRetos) {
+        modeloMisRetos = aModeloMisRetos;
+    }
+
     public static JTable getTablaMisRetos() {
         return tablaMisRetos;
     }
@@ -305,188 +314,68 @@ class MTPRankings extends AbstractTableModel{
     
 }
 
+
 /**
  * Clase que crea una tabla con los retos enviados por el usuario
  * @author Nelson Tuesta Fernández
  * @version 4.0
  * @since 05/09/2020
  */
+
 class MTPMisRetos extends AbstractTableModel{
+    Vector datosFila;
+    Vector datosColumna;
     
-    @Override
-    public int getColumnCount() {
-        return 4;
+    public MTPMisRetos(){
+        
+        String linea = "";
+        datosFila = new Vector();
+        datosColumna = new Vector();
+        
+        try{
+            
+            FileInputStream fis = new FileInputStream(ficheroUsuariosRetados);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+            StringTokenizer st1 = new StringTokenizer(br.readLine(), ";");
+            
+            while(st1.hasMoreTokens()){
+                datosColumna.addElement(st1.nextToken());
+            }
+            
+            while((linea = br.readLine()) != null){
+                StringTokenizer st2 = new StringTokenizer(linea, ";");
+                while(st2.hasMoreTokens()){
+                    datosFila.addElement(st2.nextToken());
+                }
+            }
+            
+            br.close();
+            
+        }catch(IOException ioe){
+            System.out.println(ioe.toString());
+        }
+
     }
-    
+
     @Override
     public int getRowCount() {
-        return 1;
+        return datosFila.size() / getColumnCount();
+    }
+
+    @Override
+    public int getColumnCount() {
+        return datosColumna.size();
     }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        int i;
-        String rival = "null";
-        String modalidad = "null";
-        String numTandas = "null";
-        String tiempo = "null";
-        
-        if(Cliente.isRetoLanzadoConExito()){
-            for(i=0; i<Connection.devuelveJugadores().size(); i++){
-                //Cliente cl = Cliente.devuelveJugadores().get(i);
-                rival = Cliente.getOponenteReto();
-                modalidad = Cliente.getModalidad();
-                numTandas = Cliente.getNumTandas();
-                tiempo = Cliente.getTiempo();
-            
-                switch (columnIndex) {
-                    case 0:
-                        return "#" + rival;
-
-                    case 1:
-                        return modalidad;
-
-                    case 2:
-                        
-                        switch (numTandas) {
-                            case "una":
-                                numTandas = "1";
-                                break;
-                                
-                            case "dos":
-                                numTandas = "2";
-                                break;
-                                
-                            case "tres":
-                                numTandas = "3";
-                                break;
-                                
-                            case "cuatro":
-                                numTandas = "4";
-                                break;
-                                
-                            case "cinco":
-                                numTandas = "5";
-                                break;
-                                
-                            case "seis":
-                                numTandas = "6";
-                                break;
-                                
-                            case "siete":
-                                numTandas = "7";
-                                break;
-                                
-                            case "ocho":
-                                numTandas = "8";
-                                break;
-                                
-                            case "nueve":
-                                numTandas = "9";
-                                break;
-                                
-                            case "diez":
-                                numTandas = "10";
-                                break;
-                        }
-                        return numTandas;
-                        
-                    //default: //columnIndex == 3
-                    case 3:    
-                        switch(tiempo){
-                            case "cinco":
-                                tiempo = "5";
-                                break;
-                                
-                            case "seis":
-                                tiempo = "6";
-                                break;
-                            
-                            case "siete":
-                                tiempo = "7";
-                                break;
-                                
-                            case "ocho":
-                                tiempo = "8";
-                                break;
-                                
-                            case "nueve":
-                                tiempo = "9";
-                                break;
-                                
-                            case "diez":
-                                tiempo = "10";
-                                break;
-                            
-                            case "once":
-                                tiempo = "11";
-                                break;
-                                
-                            case "doce":
-                                tiempo = "12";
-                                break;
-                                
-                            case "trece":
-                                tiempo = "13";
-                                break;
-                                
-                            case "catorce":
-                                tiempo = "14";
-                                break;
-                            
-                            case "quince":
-                                tiempo = "15";
-                                break;
-                                
-                            case "dieciséis":
-                                tiempo = "16";
-                                break;
-                                
-                            case "diecisiete":
-                                tiempo = "17";
-                                break;
-                                
-                            case "dieciocho":
-                                tiempo = "18";
-                                break;
-                            
-                            case "diecinueve":
-                                tiempo = "19";
-                                break;
-                                
-                            case "veinte":
-                                tiempo = "20";
-                                break;
-                        }
-                        return tiempo;
-                }
-                
-            }
-            
-        }
-        return "";
-
-    }
-
-    @Override
-    public String getColumnName(int c){
-        
-        switch (c) {
-            case 0:
-                return "Nombre del rival";
-                
-            case 1:
-                return "Modalidad";
-                
-            case 2:
-                return "Nº tandas";
-                
-            default: //c == 3
-                return "Tiempo (s)";
-        }
-        
+        return (String) datosFila.elementAt((rowIndex * getColumnCount()) + columnIndex);
     }
     
+    @Override
+    public String getColumnName(int i){
+        return (String)datosColumna.get(i);
+    }
 }
 
 /**
@@ -523,12 +412,8 @@ class MTPRetosRival extends AbstractTableModel{
  * @since 05/09/2020
  */
 class MTPUsuariosConectados extends AbstractTableModel{
-    
-    FileReader fr = null;
-    BufferedReader br = null;
-    String linea = "";
-    String token = "";
-    Vector nicks;
+    private static Vector nicks = new Vector();
+    //private static Vector nicks;
     
     /**
      * Constructor
@@ -537,36 +422,26 @@ class MTPUsuariosConectados extends AbstractTableModel{
         
         FileReader fr = null;
         BufferedReader br = null;
-        StringTokenizer st = null;
-        String nick = "";        
-        nicks = new Vector();
+        String linea = "";
         
         try{
-            
-            fr = new FileReader(ficheroRegistros);
+            fr = new FileReader("Usuarios conectados.txt");
             br = new BufferedReader(fr);
-            int numTokens = 1;
             
             while((linea = br.readLine()) != null){
-
-                st = new StringTokenizer(linea, ";");
-
-                while(st.hasMoreTokens()){
-                    nicks.addElement(st.nextToken());
-                }
+                nicks.addElement(linea);
             }
-            
             br.close();
-
-        }catch(Exception ioe){
+            
+        }catch(IOException ioe){
             System.out.println(ioe.toString());
         }
-                
     }
     
     @Override
     public int getRowCount() {
-        return nicks.size() / getColumnCount();
+        int numFilas = Cliente.getNumJugadoresInt();
+        return numFilas;
     }
 
     @Override
@@ -576,11 +451,13 @@ class MTPUsuariosConectados extends AbstractTableModel{
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
+        
         if(columnIndex == 0){
-            return (String) nicks.elementAt((rowIndex * getColumnCount()) + columnIndex);
-            
-        }else if(columnIndex == 1){
-            return "Desconectado"; /** @deprectaded Configurar esto cuando se arregle el problema de los ArrayList*/
+            return nicks.get(rowIndex);
+        }
+        
+        if(columnIndex == 1){
+            return "Conectado";
         }
         
         return "";
@@ -590,9 +467,12 @@ class MTPUsuariosConectados extends AbstractTableModel{
     public String getColumnName(int i){
         if(i == 0){
             return "Nick";
-        }else if(i == 1){
+        }
+        
+        if(i == 1){
             return "Estado";
         }
+        
         return "";
     }
     

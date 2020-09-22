@@ -11,12 +11,16 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 
 import java.net.Socket;
 import javax.swing.JDialog;
 
 import javax.swing.JLabel;
 import javax.swing.WindowConstants;
+
+import static practica.pkgfinal.mtpa.Connection.ficheroUsuariosConectados;
 
 /**
  * Esta clase representa a todo usuario que se conecta al sistema. Esta clase es
@@ -39,6 +43,7 @@ public class Cliente{
     private static JLabel errorUsuarioYaExiste;
     private static JLabel errorRestriccionesPassword;
     private static JLabel errorSimbolosProhibidos;
+    private static JLabel errorInicioSesionDoble;
     private static JLabel registroCompletado;
     private static JLabel errorAjustesIncompletos;
     private static JLabel errorUsuarioNoDisponible;
@@ -56,6 +61,8 @@ public class Cliente{
     private static JDialog dialogUsuariosConectados = new JDialog(miPanel, false);
     private static JDialog dialogMisRetos = new JDialog(miPanel, false);
     private static JDialog dialogVerRankings = new JDialog(miPanel, false);
+    private static JDialog dialogSegundosPrevia = new JDialog(miPanel, false);
+    
     
     
     /**
@@ -68,22 +75,29 @@ public class Cliente{
     private static String usuarioRegistro;
     private static String passRegistro;
     private static String passConfirmRegistro;
+    private static String usuarioConectado;
     
     private static String modalidad;
     private static String numTandas;
     private static String tiempo;
     private static String oponenteReto;
     private static String tipoRankingElegido;
+    private static String numJugadoresString;
+    private static int numJugadoresInt;
+    private static int numMisRetos;
+    private static int numConexiones;
+    private static int numRankings;
     
     private static boolean retoLanzadoConExito;
     private static boolean irAlPanelCuatro;
-    private static boolean irAlPanelCinco;
+    private static boolean irAlPanelSeis;
     private static boolean volverALosRetos;
     private static boolean cerrarSesionJugador;
     private static boolean verLosRankings;
     private static boolean rankingActualizadoConExito;
     private static boolean atrasRankings;
     private static boolean actualizarRanking;
+    
     
     /**
      * Método main de la clase Cliente
@@ -99,8 +113,8 @@ public class Cliente{
         boolean volverAtras = false;
         boolean lanzarUnReto = false;
         boolean actualizarJugadoresConectados = false;
-        boolean panelCuatro = false;
         boolean panelCinco = false;
+        boolean panelSeis = false;
         boolean conectar = false;
         boolean desconectar = false;
         
@@ -108,7 +122,6 @@ public class Cliente{
         String tipoErrorRegistro = "Error";
         String tipoErrorLanzarReto = "Error";
         String tipoErrorTipoRanking = "Error";
-        String tipoErrorConsultarRanking = "Error";
         
         DataInputStream in;
         DataOutputStream out;
@@ -122,21 +135,23 @@ public class Cliente{
             Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
             dialogMisRetos.setSize(380, 120);
             dialogUsuariosConectados.setSize(321, 200);
-            
+                        
             miPanel.addComponentListener(new ComponentAdapter() {
                 Point ultimaUbicacion;
-                //Point nuevaUbicacion;
                 
                 @Override
                 public void componentMoved(ComponentEvent e){
                     try{
+                        /*
                         dialogMisRetos.setAlwaysOnTop(true);
                         getDialogUsuariosConectados().setAlwaysOnTop(true);
                         dialogVerRankings.setAlwaysOnTop(true);
-
+                        dialogSegundosPrevia.setAlwaysOnTop(true);
+                        */
                         dialogMisRetos.toFront();
                         getDialogUsuariosConectados().toFront();
                         dialogVerRankings.toFront();
+                        dialogSegundosPrevia.toFront();
 
                         if(ultimaUbicacion == null && miPanel.isVisible()){
 
@@ -146,10 +161,11 @@ public class Cliente{
                             Point nuevaUbicacion = miPanel.getLocation();
                             int dx = nuevaUbicacion.x - ultimaUbicacion.x;
                             int dy = nuevaUbicacion.y - ultimaUbicacion.y;
-
+                            
                             dialogMisRetos.setLocation(dialogMisRetos.getX() + dx, dialogMisRetos.getY() + dy);
                             getDialogUsuariosConectados().setLocation(getDialogUsuariosConectados().getX() + dx, getDialogUsuariosConectados().getY() + dy);
                             dialogVerRankings.setLocation(dialogVerRankings.getX() + dx, dialogVerRankings.getY() + dy);
+                            dialogSegundosPrevia.setLocation(dialogSegundosPrevia.getX() + dx, dialogSegundosPrevia.getY() + dy);
 
                             ultimaUbicacion = nuevaUbicacion;
 
@@ -161,21 +177,25 @@ public class Cliente{
             miPanel.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowIconified(WindowEvent e){
+                    /*
                     dialogMisRetos.setAlwaysOnTop(false);
                     getDialogUsuariosConectados().setAlwaysOnTop(false);
                     dialogVerRankings.setAlwaysOnTop(false);
-                    
+                    dialogSegundosPrevia.setAlwaysOnTop(false);
+                    */
                     dialogMisRetos.toBack();
                     getDialogUsuariosConectados().toBack();
                     dialogVerRankings.toBack();
+                    dialogSegundosPrevia.toBack();
                     
                 }
                 
             });
-            
+                        
             dialogMisRetos.setLocationRelativeTo(miPanel);
             dialogUsuariosConectados.setLocationRelativeTo(miPanel);
             dialogVerRankings.setLocationRelativeTo(miPanel);
+            dialogSegundosPrevia.setLocationRelativeTo(miPanel);
             
             do{
 
@@ -223,22 +243,28 @@ public class Cliente{
                                 
                                 switch(tipoErrorInicioSesion){
                                     case "ningunError":
+                                        ocultarErrores();
+                                        setUsuarioConectado(usuarioInicioSesion);
                                         
                                         //Conectar con el tercer panel
-                                        miPanel.setNickUsuarioConectado(usuarioInicioSesion);
                                         miPanel.setTipoPanel(3);
                                         miPanel.cambiaPanel(3);
-                                        ocultarErrores();
-                                                                                
-                                        //conectar = marcarJugadoresOnline(new Servidor(usuarioInicioSesion));
-                                        conectar = Connection.marcarJugadoresOnline(new Servidor(usuarioInicioSesion));
                                         
-                                        if(conectar){
-                                            System.out.println("Sesión iniciada como: #" + usuarioInicioSesion);
-                                        }else{
-                                            System.out.println("Sesión iniciada como: #" + usuarioInicioSesion + ", pero con errores");
+                                        FileWriter fw = null;
+                                        BufferedWriter bw = null;
+                                        
+                                        try{
+                                            fw = new FileWriter(ficheroUsuariosConectados, true);
+                                            bw = new BufferedWriter(fw);
+                                            
+                                            bw.write("#" + usuarioInicioSesion + "\n");
+                                            bw.flush();
+                                            bw.close();
+                                            
+                                        }catch(IOException ioe){
+                                            System.out.println(ioe.toString());
                                         }
-                                        
+
                                         break;
                                         
                                     case "datosIncompletos":
@@ -264,6 +290,12 @@ public class Cliente{
                                         
                                         //Por el mismo motivo que lo anterior:
                                         miPanel.getRegistroCompletado().setText("");
+                                        break;
+                                        
+                                    case "inicioSesionDoble":
+                                        ocultarErrores();
+                                        errorInicioSesionDoble = miPanel.getInicioSesionDoble();
+                                        errorInicioSesionDoble.setVisible(true);
                                         break;
                                         
                                     default:
@@ -324,6 +356,7 @@ public class Cliente{
                                         crear la cuenta*/
                                         miPanel.getUsuarioYaExiste().setText("");
                                         
+                                        
                                         break;
                                         
                                     case "datosIncompletos2":
@@ -380,20 +413,22 @@ public class Cliente{
                         while(miPanel.getTipoPanel() == 3){
                             
                             setIrAlPanelCuatro(false);
-                            setIrAlPanelCinco(false);
+                            setIrAlPanelSeis(false);
                             
                             lanzarUnReto = miPanel.isLanzarRetoPulsado();
                             actualizarJugadoresConectados = miPanel.isActualizarListaPulsado();
-                            panelCuatro = miPanel.isTemporalUnoPulsado();
+                            panelCinco = miPanel.isTemporalUnoPulsado();
                             panelCinco = miPanel.isTemporalDosPulsado();
                             
-                            if(panelCuatro){
-                                miPanel.setTipoPanel(4);
-                                break;
-                            }
+                            miPanel.getAvisoErrorPosicion().setVisible(true);
                             
                             if(panelCinco){
                                 miPanel.setTipoPanel(5);
+                                break;
+                            }
+                            
+                            if(panelSeis){
+                                miPanel.setTipoPanel(6);
                                 break;
                             }
                             
@@ -415,15 +450,31 @@ public class Cliente{
                                         setRetoLanzadoConExito(true);
                                         lanzarRetoCompletado = miPanel.getLanzarRetoCompletado();
                                         lanzarRetoCompletado.setVisible(true);
+                                        numMisRetos++;
+                                        
+                                        int tmp = numMisRetos-1;
+                                        String tituloInstancia = "Instancia " + tmp;
+                                        
+                                        if(numMisRetos!=1 && dialogMisRetos.getTitle().equals(tituloInstancia)){
+                                            dialogMisRetos.dispose();
+                                        }
                                         
                                         dialogMisRetos = new TablaPersonalizada(1);
                                         dialogMisRetos.setSize(380, 160);
+                                        miPanel.setLocation(dim.width/2 - miPanel.getSize().width/2, dim.height/2 - miPanel.getSize().height/2);
+                               
+                                        try {
+                                            Thread.sleep(100);
+                                        } catch (InterruptedException ex) {
+                                            System.out.println(ex.toString());
+                                        }
+                                
                                         dialogMisRetos.setLocation((dim.width/2 - dialogMisRetos.getSize().width/2) + 229, (dim.height/2 - dialogMisRetos.getSize().height/2) - 45);
                                         dialogMisRetos.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                                        dialogMisRetos.setTitle("Instancia " + numMisRetos);
                                         dialogMisRetos.setUndecorated(true);
                                         dialogMisRetos.setType(JDialog.Type.UTILITY);
                                         dialogMisRetos.setVisible(true);
-                                        
                                         miPanel.resetearCampos();
                                         
                                         break;
@@ -460,24 +511,90 @@ public class Cliente{
                             }
                             
                             if(actualizarJugadoresConectados){
+                                
                                 System.out.print(" ");
                                 System.out.print("\b");
                                 
+                                numJugadoresString = comprobarNumeroJugadoresConectados(in, out);
+                                setNumJugadoresInt(Integer.parseInt(numJugadoresString));
+                                numConexiones++;
+                                
+                                int tmp = numConexiones-1;
+                                String tituloInstancia = "Instancia " + tmp;
+
+                                if(numConexiones!=1 && dialogUsuariosConectados.getTitle().equals(tituloInstancia)){
+                                    dialogUsuariosConectados.dispose();
+                                }
+                                
                                 dialogUsuariosConectados = new TablaPersonalizada(3);
                                 dialogUsuariosConectados.setSize(403, 100);
+                                miPanel.setLocation(dim.width/2 - miPanel.getSize().width/2, dim.height/2 - miPanel.getSize().height/2);
+                                
+                                try {
+                                    Thread.sleep(100);
+                                } catch (InterruptedException ex) {
+                                    System.out.println(ex.toString());
+                                }
+                                
                                 dialogUsuariosConectados.setLocation((dim.width/2 - dialogUsuariosConectados.getSize().width/2) - 220,
                                                                 (dim.height/2 - dialogUsuariosConectados.getSize().height/2) + 190);
                                 dialogUsuariosConectados.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                                dialogUsuariosConectados.setTitle("Instancia " + numConexiones);
                                 dialogUsuariosConectados.setUndecorated(true);
                                 dialogUsuariosConectados.setType(JDialog.Type.UTILITY);
                                 dialogUsuariosConectados.setVisible(true);
-                                
+
                             }
                         }
                         
                         break;
                         
-                    case 4: //Panel del juego
+                    case 4: //Panel previo al juego
+                        
+                        ocultarErrores();
+                        System.out.println("Lanzando el panel previo al juego...\n");
+                        miPanel.setTitle("El juego comenzará en unos segundos");
+                        miPanel.setSize(600, 550);
+                        miPanel.setLocation(dim.width/2 - miPanel.getSize().width/2, dim.height/2 - miPanel.getSize().height/2);
+                        miPanel.setVisible(true);
+                        miPanel.setResizable(false);
+                        miPanel.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+                        
+                        int i;
+                        
+                        /*
+                            REVISAR. Mostrar lo de AlFrente cuando sea que te acepten un reto.
+                            Configurar las demás opciones y mostrar los mensajes en función del tipo.
+                            Mostrar las características del reto al recibir uno y botones de aceptar/cancelar.
+                            Enlazar con estos textos al mandar retos
+                        */
+                        dialogSegundosPrevia = new AlFrente();
+                        dialogSegundosPrevia.setSize(60, 60);
+                        dialogSegundosPrevia.setLocation((dim.width/2 - dialogSegundosPrevia.getSize().width/2) - 255,(dim.height/2 - dialogSegundosPrevia.getSize().height/2) + 195);
+                        dialogSegundosPrevia.setUndecorated(true);
+                        dialogSegundosPrevia.setType(JDialog.Type.UTILITY);
+                        dialogSegundosPrevia.setVisible(true);
+
+                        try{
+                            
+                            for(i=9; i>=0; i--){
+                                Thread.sleep(1000);
+                                AlFrente.getSegundosPrevia().setBounds(16, -22, 100, 100);
+                                AlFrente.getSegundosPrevia().setText("" + i);
+                                
+                            }
+                            
+                        }catch(InterruptedException ie){
+                            System.out.println(ie.toString());
+                        }
+                        
+                        AlFrente.getSegundosPrevia().setVisible(false);
+                        miPanel.setTipoPanel(5);
+                        miPanel.cambiaPanel(5);
+                        
+                        break;
+                        
+                    case 5: //Panel del juego
                         
                         ocultarErrores();
                         System.out.println("Lanzando el panel del juego...\n");
@@ -488,13 +605,14 @@ public class Cliente{
                         miPanel.setResizable(false);
                         miPanel.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                         
-                        while(miPanel.getTipoPanel() == 4){
+                        while(miPanel.getTipoPanel() == 5){
                             
                         }
                         
                         break;
+
                         
-                    case 5: //Panel del resultado de la partida
+                    case 6: //Panel del resultado de la partida
                         
                         ocultarErrores();
                         System.out.println("Lanzando el panel del resultado de la partida...\n");
@@ -505,7 +623,7 @@ public class Cliente{
                         miPanel.setResizable(false);
                         miPanel.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                         
-                        while(miPanel.getTipoPanel() == 5){
+                        while(miPanel.getTipoPanel() == 6){
                             
                             setVerLosRankings(false);
                             setVolverALosRetos(false);
@@ -526,14 +644,14 @@ public class Cliente{
                             }
 
                             if(verLosRankings){
-                                miPanel.setTipoPanel(6);
+                                miPanel.setTipoPanel(7);
                                 break;
                             }
                         }
                         
                         break;
                     
-                    case 6: //Panel de los rankings
+                    case 7: //Panel de los rankings
                         
                         ocultarErrores();
                         System.out.println("Lanzando el panel de los rankings...\n");
@@ -544,7 +662,7 @@ public class Cliente{
                         miPanel.setResizable(false);
                         miPanel.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                         
-                        while(miPanel.getTipoPanel() == 6){
+                        while(miPanel.getTipoPanel() == 7){
                             setAtrasRankings(false);
                             setRankingActualizadoConExito(false);
                             
@@ -552,7 +670,7 @@ public class Cliente{
                             actualizarRanking = miPanel.isActualizarRankingsPulsado();
                                                         
                             if(atrasRankings){
-                                miPanel.setTipoPanel(5);
+                                miPanel.setTipoPanel(6);
                                 break;
                             }
                             
@@ -570,15 +688,34 @@ public class Cliente{
                                         ocultarErrores();
                                         elegirTipoRankingCompletado = miPanel.getActualizarTablaCompletado();
                                         elegirTipoRankingCompletado.setVisible(true);
-
+                                        numRankings++;
+                                        
+                                        int tmp = numRankings-1;
+                                        String tituloInstancia = "Instancia " + tmp;
+                                                                                
+                                        if(numRankings!=1 && dialogVerRankings.getTitle().equals(tituloInstancia)){
+                                            dialogVerRankings.dispose();
+                                        }
+                                        
+                                        //NO FUNCIONA. Tampoco funciona el de los usuarios conectados
+                                        
                                         dialogVerRankings = new TablaPersonalizada(4);
-                                        dialogVerRankings.setSize(321, 200);
-                                        dialogVerRankings.setLocation((dim.width/2 - dialogVerRankings.getSize().width/2) - 2,(dim.height/2 - dialogVerRankings.getSize().height/2) + 50);
+                                        dialogVerRankings.setSize(321, 180);
+                                        miPanel.setLocation(dim.width/2 - miPanel.getSize().width/2, dim.height/2 - miPanel.getSize().height/2);
+                                        
+                                        try {
+                                            Thread.sleep(100);
+                                        } catch (InterruptedException ex) {
+                                            System.out.println(ex.toString());
+                                        }
+                                        
+                                        dialogVerRankings.setLocation((dim.width/2 - dialogVerRankings.getSize().width/2) - 2,(dim.height/2 - dialogVerRankings.getSize().height/2) + 70);
                                         dialogVerRankings.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                                        dialogVerRankings.setTitle("Instancia " + numRankings);
                                         dialogVerRankings.setUndecorated(true);
                                         dialogVerRankings.setType(JDialog.Type.UTILITY);
                                         dialogVerRankings.setVisible(true);
-
+                                        
                                         setRankingActualizadoConExito(true);
                                         break;
                                         
@@ -598,7 +735,7 @@ public class Cliente{
                         
                         break;
                         
-                    case 7: //Salir
+                    case 8: //Salir
                         System.out.println("Saliendo del juego...");
                         salirDelJuego(in, out);
                         break;
@@ -609,14 +746,14 @@ public class Cliente{
                         salirDelJuego(in, out);
                         break;
                 }
-            }while(tipoPanel != 7);
+            }while(tipoPanel != 8);
             clientSocket.close();
             
         }catch(IOException ioe){
             System.out.println(ioe.toString());
         }
     }
-    
+
     /**
      * Método para salir del juego y cerrar la conexión con el servidor
      * @param in El DataInputStream que conecta con la clase Servidor
@@ -672,9 +809,12 @@ public class Cliente{
         }else if(miPanel.getUsuarioNoDisponible().isVisible()){
             miPanel.getUsuarioNoDisponible().setVisible(false);
             
+        }else if(miPanel.getAutoReto().isVisible()){
+            miPanel.getAutoReto().setVisible(false);
+            
         }else if(miPanel.getLanzarRetoCompletado().isVisible()){
             miPanel.getLanzarRetoCompletado().setVisible(false);
-            
+        
         }else if (miPanel.getRetoYaEnviado().isVisible()){
             miPanel.getRetoYaEnviado().setVisible(false);
             
@@ -798,7 +938,30 @@ public class Cliente{
         String errorStringTipoRanking = in2.readUTF();
         return errorStringTipoRanking;
     }
-
+    
+    public static String comprobarNumeroJugadoresConectados(DataInputStream in, DataOutputStream out) throws IOException{
+        DataInputStream in2 = in;
+        DataOutputStream out2 = out;
+        
+        out2.writeUTF("comprobarNumeroJugadoresConectados");
+        out2.flush();
+                
+        String numJugadores = in2.readUTF();
+        return numJugadores;
+    }
+    
+    public static String comprobarNickJugadoresConectados(DataInputStream in, DataOutputStream out) throws IOException{
+        DataInputStream in2 = in;
+        DataOutputStream out2 = out;
+        
+        out2.writeUTF("comprobarNickJugadoresConectados");
+        out2.flush();
+        
+        String nickJugadores = in2.readUTF();
+        return nickJugadores;
+    }
+    
+    
     //Todos los métodos que hay a partir de aquí son getters y setters
     
     public static String getUsuarioInicioSesion() {
@@ -848,21 +1011,21 @@ public class Cliente{
     public static void setOponenteReto(String aOponenteReto) {
         oponenteReto = aOponenteReto;
     }
-
-    public static boolean isIrAlPanelCinco() {
-        return irAlPanelCinco;
-    }
-
+    
     public static boolean isIrAlPanelCuatro() {
         return irAlPanelCuatro;
     }
-
+    
     public static void setIrAlPanelCuatro(boolean aIrAlPanelCuatro) {
         irAlPanelCuatro = aIrAlPanelCuatro;
     }
     
-    public static void setIrAlPanelCinco(boolean aIrAlPanelCinco) {
-        irAlPanelCinco = aIrAlPanelCinco;
+    public static boolean isIrAlPanelSeis() {
+        return irAlPanelSeis;
+    }
+
+    public static void setIrAlPanelSeis(boolean aIrAlPanelSeis) {
+        irAlPanelSeis = aIrAlPanelSeis;
     }
 
     public static boolean isVolverALosRetos() {
@@ -935,5 +1098,29 @@ public class Cliente{
 
     public static void setDialogUsuariosConectados(JDialog aDialogUsuariosConectados) {
         dialogUsuariosConectados = aDialogUsuariosConectados;
+    }
+
+    public static int getNumJugadoresInt() {
+        return numJugadoresInt;
+    }
+
+    public static void setNumJugadoresInt(int aNumJugadoresInt) {
+        numJugadoresInt = aNumJugadoresInt;
+    }
+
+    public static String getUsuarioConectado() {
+        return usuarioConectado;
+    }
+
+    public static void setUsuarioConectado(String aUsuarioConectado) {
+        usuarioConectado = aUsuarioConectado;
+    }
+
+    public static int getNumMisRetos() {
+        return numMisRetos;
+    }
+
+    public static void setNumMisRetos(int aNumMisRetos) {
+        numMisRetos = aNumMisRetos;
     }
 }

@@ -1,0 +1,2 @@
+Nombre del rival;Modalidad;Nº tandas;Tiempo (s)
+#nelson;Un total de;dos;seis

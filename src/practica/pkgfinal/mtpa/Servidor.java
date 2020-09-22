@@ -9,7 +9,6 @@
 //2. Hacer clic derecho en Cliente.java y hacer clic en Run File
 //El programa empezará con un JFrame con el panel de inicio de sesión
 
-
 package practica.pkgfinal.mtpa;
 
 import java.io.BufferedReader;
@@ -28,6 +27,9 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static practica.pkgfinal.mtpa.Connection.ficheroUsuariosConectados;
+import static practica.pkgfinal.mtpa.Connection.ficheroUsuariosRetados;
+
 /**
  * Por esta clase pasan todas las operaciones que se envían desde la clase cliente
  * y el servidor se encarga de validarlas y reenviar el resultado a la Clase Cliente
@@ -37,10 +39,9 @@ import java.util.regex.Pattern;
  * @since 05/09/2020
  */
 public class Servidor {
-    /**
-     * Objeto para guardar el nick del usuario que ha iniciado sesión
-     */
-    private static String usuarioInicioSesion;
+
+    private static ArrayList<Connection> usuariosConectados = new ArrayList<>();
+    private static Connection c;
     
     /**
      * Método main. Se llama a la conexión por Sockets apoyándose en la clase
@@ -54,10 +55,28 @@ public class Servidor {
             ServerSocket listenSocket = new ServerSocket(serverPort);
             System.out.println("¡Servidor iniciado!");
             
+            File existeFicheroUsuariosConectados = new File(ficheroUsuariosConectados);
+            if(existeFicheroUsuariosConectados.exists()){
+                existeFicheroUsuariosConectados.delete();
+            }
+            
+            File existeFicheroUsuariosRetados = new File(ficheroUsuariosRetados);
+            
+            if(existeFicheroUsuariosRetados.exists()){
+                existeFicheroUsuariosRetados.delete();
+            }
+            
+            FileWriter fw = new FileWriter(ficheroUsuariosRetados);
+            BufferedWriter bw = new BufferedWriter(fw);
+            
+            bw.write("Nombre del rival;Modalidad;Nº tandas;Tiempo (s)\n");
+            bw.close();
+            
             while(true){
                 Socket clientSocket = listenSocket.accept();
-        	Connection c = new Connection(clientSocket);
-                System.out.println("¡Cliente conectado!");
+        	c = new Connection(clientSocket);
+                
+                System.out.println("\n¡Cliente conectado!");
             }
         }catch(IOException ioe){
             System.out.println("No se ha podido iniciar la conexion");
@@ -65,21 +84,41 @@ public class Servidor {
         }
     }
     
+    public static boolean marcarJugadoresOnline(Connection c){
+        boolean estado = false;
+        estado = usuariosConectados.add(c);
+        return estado;
+    }
+
+    
     /**
      * Constructor de la clase Servidor
      * @param aUsuarioInicioSesion El nombre del usuario que ha iniciado sesión
      */
+    /*
     public Servidor(String aUsuarioInicioSesion){
         usuarioInicioSesion = aUsuarioInicioSesion;
     }
     
+    */
     /**
      * Sobrecarga del constructor
      */
     public Servidor(){
         
     }
-    
+
+    public static Connection getC() {
+        return c;
+    }
+
+    public static void setC(Connection aC) {
+        c = aC;
+    }
+
+    public static ArrayList<Connection> getUsuariosConectados() {
+        return usuariosConectados;
+    }
 }
 
 /**
@@ -102,6 +141,10 @@ class Connection extends Thread{
      * clasificaciones (palmarés) de los usuarios
      */
     public static String ficheroRankings = "Rankings de usuarios.txt";
+    
+    public static String ficheroUsuariosConectados = "Usuarios conectados.txt";
+    
+    public static String ficheroUsuariosRetados = "Usuarios a los que he retado.txt";
     
     /**
      * Estos cuatro objetos nos sirven para controlar los datos que se reciben y
@@ -146,6 +189,8 @@ class Connection extends Thread{
     static String indicarTipoRanking = "";
     static String consultarficheroRankings = "";
     
+    static String indicarNumJugadores = "";
+    
     /**
      * Constructor de la clase Connection
      * @param aClientSocket Socket por parte del cliente
@@ -170,6 +215,7 @@ class Connection extends Thread{
      */
     @Override
     public void run(){
+    //public void run(){
         
         while(!cerrarConexion){
             try{
@@ -183,6 +229,9 @@ class Connection extends Thread{
                 String buscarErroresRegistro = "";
                 String buscarErroresLanzarReto = "";
                 String buscarErroresTipoRanking = "";
+                //String buscarErroresNumeroJugadores = "";
+                String numeroJugadores = "";
+                String tipoErrorComprobarJugadores = "";
                 
                 /**
                  * Este objeto de tipo String sirve para almacenar el método, en
@@ -195,9 +244,23 @@ class Connection extends Thread{
                 switch(metodo){
                     case "comprobarInicioSesion":
                         usuario = in.readUTF();
-                        password = in.readUTF();      
+                        password = in.readUTF();
                         
                         buscarErroresInicioSesion = comprobarInicioSesion(usuario, password);
+                        
+                        if(buscarErroresInicioSesion.equals("ningunError")){
+                            boolean conectar = Servidor.marcarJugadoresOnline(Servidor.getC());
+                            
+                            if(conectar){
+                                System.out.println("Se ha añadido a #" + usuario + " a la lista de jugadores conectados");
+                                System.out.println("Número de jugadores conectados en este momento: " + Servidor.getUsuariosConectados().size());
+                                
+                            }else{
+                                System.out.println("Se ha producido un error al añadir al usuario a la lista de jugadores conectados");
+                            }
+                            
+                        }
+                        
                         out.writeUTF(buscarErroresInicioSesion);
                         out.flush();
                         break;
@@ -206,13 +269,16 @@ class Connection extends Thread{
                         crearNick = in.readUTF();
                         crearPass = in.readUTF();
                         confirmarPass = in.readUTF();
-                                        
+                        
                         buscarErroresRegistro = comprobarRegistro(crearNick, crearPass, confirmarPass);
                         out.writeUTF(buscarErroresRegistro);
                         out.flush();
                         break;
                         
                     case "comprobarLanzarReto":
+                        System.out.print(" ");
+                        System.out.print("\b");
+                        
                         indicarModalidad = in.readUTF();
                         indicarNumTandas = in.readUTF();
                         indicarTiempo = in.readUTF();
@@ -230,6 +296,13 @@ class Connection extends Thread{
                         out.writeUTF(buscarErroresTipoRanking);
                         out.flush();
                         break;
+                   
+                    case "comprobarNumeroJugadoresConectados":
+
+                        numeroJugadores = comprobarNumeroJugadoresConectados();
+                        out.writeUTF(numeroJugadores);
+                        out.flush();
+                        break;
 
                     case "salirDelJuego":
                         cerrarConexion = true;
@@ -244,29 +317,32 @@ class Connection extends Thread{
                                 System.out.println(ioe.toString());
                             }
                         }
+                        break;
+                        
                 }
                 
             }catch(IOException ioe){
-                System.out.println(ioe.toString());
+                //System.out.println(ioe.toString());
                 System.exit(0);
             }
         }
-    }
+    };
     
     /**
      * Este objeto ArrayList nos servirá para almacenar los jugadores que están
      * conectados en el sistema (se liberará un jugador cuando cierre la sesión
      * o salga del programa)
      */
-    private static ArrayList<Servidor> jugadoresConectados = new ArrayList<>();
+    //private static ArrayList<Servidor> jugadoresConectados = new ArrayList<>();
     
     /**
      * Este método sirve para llamar a la lista de los jugadores conectados
      * @return La lista de los jugadores conectados
      */
+    /*
     public static ArrayList<Servidor> devuelveJugadores(){
         return jugadoresConectados;
-    }
+    }*/
     
     /**
      * Este método sirve para marcar los jugadores como online en el sistema (en
@@ -274,11 +350,11 @@ class Connection extends Thread{
      * @param sv El objeto de tipo servidor a añadir al ArrayList
      * @return El estado de éxito (1) o fracaso (-1) de la operación
      */
-    public static boolean marcarJugadoresOnline(Servidor sv){
+    /*public static boolean marcarJugadoresOnline(Servidor sv){
         boolean estado = false;
         estado = jugadoresConectados.add(sv);
         return estado;
-    }
+    }*/
     
     /**
      * Este método sirve para marcar los jugadores como offline en el sistema (en
@@ -286,17 +362,17 @@ class Connection extends Thread{
      * @param sv El objeto de tipo servidor a quitar del ArrayList
      * @return El estado de éxito (1) o fracaso (-1) de la operación
      */
-    public static boolean marcarJugadoresOffline(Servidor sv){
+    /*public static boolean marcarJugadoresOffline(Servidor sv){
         boolean estado = false;
         estado = jugadoresConectados.remove(sv);
         return estado;
-    }
+    }*/
     
     /**
      * Este método sirve para buscar a un jugador en el sistema
      * @return El estado de éxito (1) o fracaso (-1) de la operación
      */
-    public static Servidor buscaJugador(){
+    /*public static Servidor buscaJugador(){
         Servidor sv = null;
         
         for(int i=0; i< jugadoresConectados.size(); i++){
@@ -304,7 +380,7 @@ class Connection extends Thread{
         }
         
         return sv;
-    }
+    }*/
     
     /**
      * Este método sirve para comprobar el inicio de sesión de un usuario en el sistema
@@ -333,7 +409,7 @@ class Connection extends Thread{
             if(existeFichero.exists() == false) {
                 fw = new FileWriter(ficheroRegistros);
                 bw = new BufferedWriter(fw);
-                fw.close();
+                bw.close();
             }
             
             fr = new FileReader(ficheroRegistros);
@@ -391,10 +467,14 @@ class Connection extends Thread{
                 br.close();
             }
             
+            boolean inicioSesionDoble = buscarDuplicados(usuario);
+            
             if(usuario.equals("") || password.equals("")){
                 tipoErrorInicioSesion = "datosIncompletos";
             }else if(lineaEncontrada.equals("false") || passwordCorrecta == false){
                 tipoErrorInicioSesion = "datosIncorrectos";
+            }else if(inicioSesionDoble){
+                tipoErrorInicioSesion = "inicioSesionDoble";
             }else{
                 tipoErrorInicioSesion = "ningunError";
             }
@@ -404,6 +484,34 @@ class Connection extends Thread{
         }
         
         return tipoErrorInicioSesion;
+    }
+    
+    public static boolean buscarDuplicados(String usuario){
+        boolean estaDuplicado = false;
+        
+        FileReader fr = null;
+        BufferedReader br = null;
+        String linea = "";
+                
+        try{
+            fr = new FileReader(ficheroUsuariosConectados);
+            br = new BufferedReader(fr);
+            
+            while((linea = br.readLine()) != null){
+                if(linea.equals(usuario)){
+                    estaDuplicado = true;
+                }
+            }
+        }catch(IOException ioe){
+            /*Justo antes de que se conecte un jugador -y si es el primero en
+            conectarse- saltará el error porque aún no se ha creado el fichero
+            de usuarios conectado, así que lo omitimos*/
+            if(!Servidor.getUsuariosConectados().isEmpty()){
+                System.out.println(ioe.toString());
+            }
+        }
+        
+        return estaDuplicado;
     }
     
     
@@ -611,20 +719,58 @@ class Connection extends Thread{
     public static String comprobarLanzarReto(String modalidad, String numTandas, String tiempo, String oponenteReto){
         String tipoErrorLanzarReto = "Error";
         
+        FileReader fr = null;
+        BufferedReader br = null;
+        FileWriter fw = null;
+        BufferedWriter bw = null;
+        String linea = "";
+        
+        boolean usuarioOnline = false;
+        boolean usuarioYaRetado = false;
+        boolean autoReto = false;
+        
+        try{
+            fr = new FileReader(ficheroUsuariosConectados);
+            br = new BufferedReader(fr);
+            
+            while((linea = br.readLine()) != null){
+                if(linea.equals("#" + oponenteReto)){
+                    usuarioOnline = true;
+                }
+            }
+        }catch(IOException ioe){
+            System.out.println(ioe.toString());
+        }
+        
         if(modalidad.equals("--Modalidad--") || numTandas.equals("--Nº tandas--") || tiempo.equals("--Tiempo--") || oponenteReto.equals("")){
             tipoErrorLanzarReto = "ajustesIncompletos";
             
-        }else if(oponenteReto.equals("error")){ /** @deprecated*/
+        }else if(!usuarioOnline){
             tipoErrorLanzarReto = "usuarioNoDisponible";
             
-        }else if(oponenteReto.equals("repetido")){ /** @deprecated*/
+        }else if(usuarioYaRetado){ //REVISAR. Con el planteamiento actual se pueden cruzar los retos de diversas personas
             tipoErrorLanzarReto = "retoYaEnviado";
             
-        }else if(oponenteReto.equals("nelson")){ /** @deprecated*/
+        //}else if(oponenteReto.equals(usuario)){ //REVISAR. No funciona si el último usuario que se conecta es otro
+        }else if(autoReto){
             tipoErrorLanzarReto = "autoReto";
             
         }else{
             tipoErrorLanzarReto = "ningunError";
+                    
+            
+            try{
+                
+                fw = new FileWriter(ficheroUsuariosRetados, true);
+                bw = new BufferedWriter(fw);
+                
+                bw.write("#" + oponenteReto + ";" + modalidad + ";" + numTandas + ";" + tiempo + "\n");
+                bw.close();
+                
+            }catch(IOException ioe){
+                System.out.println(ioe.toString());
+            }
+            
         }
                 
         return tipoErrorLanzarReto;
@@ -648,4 +794,10 @@ class Connection extends Thread{
                 
         return tipoErrorTipoRanking;
     }
+    
+    public static String comprobarNumeroJugadoresConectados(){
+        String numJugadores = Integer.toString(Servidor.getUsuariosConectados().size());
+        return numJugadores;
+    }
+
 }
