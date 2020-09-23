@@ -3,6 +3,7 @@ package practica.pkgfinal.mtpa;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,13 +14,14 @@ import javax.imageio.ImageIO;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.UIManager;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -30,7 +32,7 @@ import javax.swing.text.StyledDocument;
  * una instancia de esta clase para usarla como un panel cambiante en función del
  * escenario en el que esté el usuario. Ver: {@link practica.pkgfinal.mtpa.Cliente}
  * @author Nelson Tuesta Fernández
- * @version 4.0
+ * @version 6.0
  * @since 05/09/2020
  */
 public class Panel extends JFrame implements ActionListener{
@@ -88,16 +90,18 @@ public class Panel extends JFrame implements ActionListener{
     private JLabel ajustesIncompletos = null;
     private JLabel usuarioNoDisponible = null;
     private JLabel retoYaEnviado = null;
-    private JLabel autoReto = null;
+    private static JLabel autoReto = null;
     private JLabel misRetos = null;
     private JLabel retosOtros = null;
-    private JButton temporalUno = null;
-    private JButton temporalDos = null;
     private JLabel avisoErrorPosicion = null;
     
-    private JTextPane retoAceptado = null;
-    private JTextPane retoRecibido = null;
+    private JLabel retoAceptado = null;
+    private JLabel retoRecibido = null;
     private JTextPane retoRechazado = null;
+    private JLabel condiciones = null;
+    private JButton aceptarReto = null;
+    private JButton rechazarReto = null;
+    private JLabel tipoVictoria = null;
             
     private JLabel tu = null;
     private JLabel tuContrincante = null;
@@ -106,13 +110,13 @@ public class Panel extends JFrame implements ActionListener{
     private JLabel tandasRestantes = null;
     private JLabel numTandasRestantes = null;
     private JLabel tiempoRestante = null;
-    private JLabel cantidadTiempoRestante = null;
     private JButton miPiedra = null;
     private JButton miPapel = null;
     private JButton miTijera = null;
     private JButton piedraRival = null;
     private JButton papelRival = null;
     private JButton tijeraRival = null;
+    private JProgressBar barraTiempoRestante = null;
     
     private JLabel usuariosConectados = null;
     private JLabel hashtagUsuarioARetar = null;
@@ -120,6 +124,7 @@ public class Panel extends JFrame implements ActionListener{
     private JLabel nombreGanador = null;
     private JLabel victoria = null;
     private JLabel derrota = null;
+    private JLabel empate = null;
     private JLabel queHacer = null;
     private JButton otroReto = null;
     private JButton verRanking = null;
@@ -155,8 +160,14 @@ public class Panel extends JFrame implements ActionListener{
     private boolean salirDelJuegoPulsado = false;
     private static boolean lanzarRetoPulsado = false;
     private static boolean actualizarListaPulsado = false;
-    private boolean temporalUnoPulsado = false;
-    private boolean temporalDosPulsado = false;
+    private boolean aceptarRetoPulsado = false;
+    private boolean rechazarRetoPulsado = false;
+    private boolean miPiedraPulsado = false;
+    private boolean miPapelPulsado = false;
+    private boolean miTijeraPulsado = false;
+    private boolean piedraRivalPulsado = false;
+    private boolean papelRivalPulsado = false;
+    private boolean tijeraRivalPulsado = false;
     private boolean verRankingPulsado = false;
     private boolean otroRetoPulsado = false;
     private boolean cerrarSesionPulsado = false;
@@ -191,6 +202,7 @@ public class Panel extends JFrame implements ActionListener{
             public void paintComponent(Graphics g){
                 super.paintComponent(g);
                 crearImagenes(g);
+                
             }
         };
                        
@@ -376,7 +388,7 @@ public class Panel extends JFrame implements ActionListener{
         //Elementos "normales" del panel de búsqueda de rivales
         
         bienvenido = new JLabel();
-        bienvenido.setText("Bienvenido");
+        //El texto de este JLabel incluye el nombre del usuario. Lo ajustaremos desde Cliente.java
         bienvenido.setFont(ArialBig);
         bienvenido.setForeground(Color.BLACK);
         bienvenido.setBounds(25, 60, 500, 60);
@@ -395,14 +407,15 @@ public class Panel extends JFrame implements ActionListener{
         modalidadTandas.setBounds(25, 160, 150, 20);
         panel.add(modalidadTandas);
         
-        String numeros[] = {"--Nº tandas--", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"};
+        //String numeros[] = {"--Nº tandas--", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"};
+        String numeros[] = {"--Nº tandas--", "tres", "cinco", "siete", "nueve", "once"};
         numeroTandas = new JComboBox(numeros);
         numeroTandas.setBounds(185, 160, 110, 20);
         numeroTandas.setBackground(Color.WHITE);
         panel.add(numeroTandas);
         
         tandas = new JLabel();
-        tandas.setText("tanda(s)");
+        tandas.setText("tanda(s) ganadas");
         tandas.setFont(Arial);
         tandas.setForeground(Color.BLACK);
         tandas.setBounds(300, 159, 150, 20);
@@ -488,16 +501,6 @@ public class Panel extends JFrame implements ActionListener{
         hashtagUsuarioARetar.setBounds(285, 220, 40, 40);
         panel.add(hashtagUsuarioARetar);
         
-        temporalUno = new JButton();
-        temporalUno.setText("Ir al panel 4");
-        temporalUno.setBounds(320, 0, 128, 30);
-        panel.add(temporalUno);
-        
-        temporalDos = new JButton();
-        temporalDos.setText("Ir al panel 6");
-        temporalDos.setBounds(320, 34, 128, 30);
-        panel.add(temporalDos);
-        
         avisoErrorPosicion = new JLabel();
         String avisoErrorPosicionHtml = "<html> <body>"
                 + "Nota: Si al pulsar algún botón o zona del panel alguna<br>"
@@ -505,19 +508,10 @@ public class Panel extends JFrame implements ActionListener{
                 + "tón de actualizar la lista de jugadores conectados dos<br>"
                 + "veces para que se muestren las tablas y se reajuste<br>"
                 + "su posición."
-                /*
-                + "<br>"
-                + "<br>"
-                + "Para evitar más desajustes indeseados recomiendo no<br>"
-                + "mover la posición del panel si se planea enviar varios<br>"
-                + "retos seguidos"
-                */
                 + "</body> </html>";
         avisoErrorPosicion.setText(avisoErrorPosicionHtml);
         avisoErrorPosicion.setFont(ArialNotes);
         avisoErrorPosicion.setForeground(Color.BLUE);
-        //avisoErrorPosicion.setBounds(485, 280, 450, 185);
-        //avisoErrorPosicion.setBounds(485, 240, 450, 185);
         avisoErrorPosicion.setBounds(485, 330, 450, 185);
         panel.add(avisoErrorPosicion);
         
@@ -546,47 +540,20 @@ public class Panel extends JFrame implements ActionListener{
         
         //Elementos del panel previo al juego
         
-        String usuario = "nelson";
-        String textoRetoAceptado = "El usuario #" + usuario + " ha aceptado tu reto."
-        + " El juego comenzará automáticamente en " + "   " + " segundo(s)";
-        retoAceptado = new JTextPane();
-        retoAceptado.setText(textoRetoAceptado);
+        retoAceptado = new JLabel();
         retoAceptado.setFont(ArialVeryBig);
-        retoAceptado.setBackground(null);
-        
-        StyledDocument doc1 = retoAceptado.getStyledDocument();
-        SimpleAttributeSet center1 = new SimpleAttributeSet();
-        StyleConstants.setAlignment(center1, StyleConstants.ALIGN_CENTER);
-        doc1.setParagraphAttributes(0, doc1.getLength(), center1, false);
-
-        retoAceptado.setBounds(70, 95, 440, 380); 
-        retoAceptado.setEditable(false);
-        retoAceptado.setHighlighter(null);
+        retoAceptado.setBounds(65, 80, 600, 380);
         panel.add(retoAceptado);
         
-        
-        String textoRetoRecibido = "Has recibido un reto del usuario #" + usuario + "."
-                + "Estas son las condiciones del reto: ";
-        retoRecibido = new JTextPane();
-        retoRecibido.setText(textoRetoRecibido);
+        retoRecibido = new JLabel();
         retoRecibido.setFont(ArialVeryBig);
-        retoRecibido.setBackground(null);
-        
-        StyledDocument doc2 = retoRecibido.getStyledDocument();
-        SimpleAttributeSet center2 = new SimpleAttributeSet();
-        StyleConstants.setAlignment(center2, StyleConstants.ALIGN_CENTER);
-        doc2.setParagraphAttributes(0, doc2.getLength(), center2, false);
-
-        retoRecibido.setBounds(70, 95, 440, 380); 
-        retoRecibido.setEditable(false);
-        retoRecibido.setHighlighter(null);
+        retoRecibido.setBounds(60, 80, 480, 120);
         panel.add(retoRecibido);
-        
         
         String textoRetoRechazado = "El usuario #" + usuario + "ha rechazado tu reto."
                 + "Se eliminará este reto de la lista";
         retoRechazado = new JTextPane();
-        retoRechazado.setText(textoRetoRecibido);
+        retoRechazado.setText(textoRetoRechazado);
         retoRechazado.setFont(ArialVeryBig);
         retoRechazado.setBackground(null);
         
@@ -600,6 +567,31 @@ public class Panel extends JFrame implements ActionListener{
         retoRechazado.setHighlighter(null);
         panel.add(retoRechazado);
         
+        
+        condiciones = new JLabel();
+        condiciones.setText("Éstas son las condiciones del reto. ¿Aceptas?");
+        condiciones.setFont(ArialBig);
+        condiciones.setBounds(70, 180, 500, 290);
+        panel.add(condiciones);
+
+        aceptarReto = new JButton();
+        aceptarReto.setText("Aceptar reto");
+        aceptarReto.setBounds(100, 455, 170, 45);
+        aceptarReto.setFont(ArialBold);
+        panel.add(aceptarReto);
+
+        rechazarReto = new JButton();
+        rechazarReto.setText("Rechazar reto");
+        rechazarReto.setBounds(315, 455, 170, 45);
+        rechazarReto.setFont(ArialBold);
+        panel.add(rechazarReto);
+        
+        tipoVictoria = new JLabel();
+        //El texto lo pondremos desde Cliente.java, ya que depende de la modalidad elegida
+        //Lo mismo para los bounds
+        tipoVictoria.setFont(ArialMedium);
+        tipoVictoria.setForeground(VerdeOscuro);
+        panel.add(tipoVictoria);
         
         //Elementos del panel del juego en sí
         
@@ -636,58 +628,61 @@ public class Panel extends JFrame implements ActionListener{
         numTandasRestantes = new JLabel();
         numTandasRestantes.setText("0");
         numTandasRestantes.setFont(ArialMedium);
-        numTandasRestantes.setBounds(170, 460, 100, 50);
+        numTandasRestantes.setBounds(170, 460, 150, 50);
         panel.add(numTandasRestantes);
         
         tiempoRestante = new JLabel();
-        String tiempoHtml = "<html> <body> Tiempo restante:<br> &nbsp &nbsp &nbsp &nbsp segundo(s) </body> </html>";
-        tiempoRestante.setText(tiempoHtml);
+        tiempoRestante.setText("Tiempo restante:");
         tiempoRestante.setFont(ArialMedium);
-        tiempoRestante.setBounds(325, 430, 500, 50);
+        tiempoRestante.setBounds(325, 418, 500, 50);
         panel.add(tiempoRestante);
         
-        cantidadTiempoRestante = new JLabel();
-        cantidadTiempoRestante.setText("00");
-        cantidadTiempoRestante.setFont(ArialMedium);
-        cantidadTiempoRestante.setBounds(335, 442, 200, 50);
-        panel.add(cantidadTiempoRestante);
+        UIManager.put("ProgressBar.background", new Color(164, 188, 204));
+        UIManager.put("ProgressBar.foreground", new Color(236, 236, 236));
+        /*Por defecto una JProgressBar se completa de izquierda a derecha. Como
+        la nuestra representa tiempo restante tenemos que invertirla para pasarla
+        de derecha a izquierda. Usaremos una clase extra para conseguir esto*/
+        barraTiempoRestante = new RotacionEspejo();
+        barraTiempoRestante.setBounds(330, 447, 125, 30);
+        barraTiempoRestante.setValue(0);
+        panel.add(barraTiempoRestante);
         
         miPiedra = new JButton();
         miPiedra.setText("Piedra");
         miPiedra.setFont(ArialMedium);
-        miPiedra.setBounds(90, 150, 100, 30);
+        miPiedra.setBounds(90, 145, 100, 30);
         panel.add(miPiedra);
         
         miPapel = new JButton();
         miPapel.setText("Papel");
         miPapel.setFont(ArialMedium);
-        miPapel.setBounds(90, 250, 100, 30);
+        miPapel.setBounds(90, 225, 100, 30);
         panel.add(miPapel);
         
         miTijera = new JButton();
-        miTijera.setText("Tijera");
+        miTijera.setText("Tijeras");
         miTijera.setFont(ArialMedium);
-        miTijera.setBounds(90, 350, 100, 30);
+        miTijera.setBounds(90, 305, 100, 30);
         panel.add(miTijera);
         
         piedraRival = new JButton();
         piedraRival.setText("Piedra");
         piedraRival.setFont(ArialMedium);
-        piedraRival.setBounds(355, 150, 100, 30);
+        piedraRival.setBounds(355, 145, 100, 30);
         piedraRival.setEnabled(false);
         panel.add(piedraRival);
         
         papelRival = new JButton();
         papelRival.setText("Papel");
         papelRival.setFont(ArialMedium);
-        papelRival.setBounds(355, 250, 100, 30);
+        papelRival.setBounds(355, 225, 100, 30);
         papelRival.setEnabled(false);
         panel.add(papelRival);
         
         tijeraRival = new JButton();
-        tijeraRival.setText("Tijera");
+        tijeraRival.setText("Tijeras");
         tijeraRival.setFont(ArialMedium);
-        tijeraRival.setBounds(355, 350, 100, 30);
+        tijeraRival.setBounds(355, 305, 100, 30);
         tijeraRival.setEnabled(false);
         panel.add(tijeraRival);
         
@@ -708,6 +703,13 @@ public class Panel extends JFrame implements ActionListener{
         derrota.setBounds(95, 110, 400, 100);
         panel.add(derrota);
         
+        empate = new JLabel();
+        empate.setText("Empate");
+        empate.setFont(ArialGiant);
+        empate.setForeground(Color.ORANGE);
+        empate.setBounds(95, 110, 400, 100);
+        panel.add(empate);
+        
         anuncioGanador = new JLabel();
         anuncioGanador.setText("El ganador es ");
         anuncioGanador.setFont(ArialBig);
@@ -715,14 +717,20 @@ public class Panel extends JFrame implements ActionListener{
         anuncioGanador.setBounds(95, 70, 200, 50);
         panel.add(anuncioGanador);
         
+        
         nombreGanador = new JLabel();
+        /*
         nombreGanador.setText("#nelson");
-        /** @deprecated Hacer append correctamente con el usuario cuando arreglemos el problema del ArrayList*/
-        //nombreGanador.setText("#");
         nombreGanador.setFont(ArialBig);
         nombreGanador.setForeground(Color.BLUE);
         nombreGanador.setBounds(290, 70, 200, 50);
+        */
         panel.add(nombreGanador);
+
+        
+        //anuncioGanador.setText("Ha habido un empate");
+        //anuncioGanador.setBounds(125, 70, 300, 50);
+        //nombreGanador.setVisible(false);
         
         queHacer = new JLabel();
         queHacer.setText("¿Qué quieres hacer a continuación?");
@@ -791,8 +799,11 @@ public class Panel extends JFrame implements ActionListener{
         confirmarRegistro.addActionListener(this);
         lanzarReto.addActionListener(this);
         actualizarLista.addActionListener(this);
-        temporalUno.addActionListener(this);
-        temporalDos.addActionListener(this);
+        aceptarReto.addActionListener(this);
+        rechazarReto.addActionListener(this);
+        miPiedra.addActionListener(this);
+        miPapel.addActionListener(this);
+        miTijera.addActionListener(this);
         verRanking.addActionListener(this);
         otroReto.addActionListener(this);
         cerrarSesion.addActionListener(this);
@@ -807,6 +818,8 @@ public class Panel extends JFrame implements ActionListener{
         cambiaPanel(tipoPanel);
         
     }
+    
+    
     
     /**
      * Método que se usa para cambiar la forma y elementos del panel cuando el usuario cambie de escenario
@@ -867,17 +880,12 @@ public class Panel extends JFrame implements ActionListener{
                 usuariosConectados.setVisible(true);
                 hashtagUsuarioARetar.setVisible(true);
                 actualizarLista.setVisible(true);
-                temporalUno.setVisible(true);
-                temporalDos.setVisible(true);
                 
                 break;
                 
             case 4: //Previa al juego
                 
                 ocultarTodosLosElementos();
-                
-                retoAceptado.setVisible(true);
-                
                 break;
                 
             case 5: //Juego en sí
@@ -897,7 +905,7 @@ public class Panel extends JFrame implements ActionListener{
                 papelRival.setVisible(true);
                 tijeraRival.setVisible(true);
                 tiempoRestante.setVisible(true);
-                cantidadTiempoRestante.setVisible(true);
+                //cantidadTiempoRestante.setVisible(true);
                 
                 break;
                 
@@ -907,8 +915,9 @@ public class Panel extends JFrame implements ActionListener{
                 
                 anuncioGanador.setVisible(true);
                 nombreGanador.setVisible(true);
-                victoria.setVisible(true);
-                //derrota.setVisible(true);
+                //victoria.setVisible(true);
+                derrota.setVisible(true);
+                //empate.setVisible(true);
                 queHacer.setVisible(true);
                 verRanking.setVisible(true);
                 otroReto.setVisible(true);
@@ -1056,7 +1065,7 @@ public class Panel extends JFrame implements ActionListener{
                         g.drawImage(uemc, 463, 0, 111, 64, null);
                         
                         Image reloj = ImageIO.read(new File("reloj.png"));
-                        g.drawImage(reloj, 470, 425, 64, 64, null);
+                        g.drawImage(reloj, 480, 432, 64, 64, null);
                         
                         break;
                     }
@@ -1081,14 +1090,15 @@ public class Panel extends JFrame implements ActionListener{
                         Image uemc = ImageIO.read(new File("uemc_logo.png"));
                         g.drawImage(uemc, 463, 0, 111, 64, null);
                         
-                        Image bien = ImageIO.read(new File("bien.png"));
-                        g.drawImage(bien, 365, 100, 130, 130, null);
+                        try{Thread.sleep(100);}catch(InterruptedException ie){System.out.println(ie.toString());}
+                        //Image bien = ImageIO.read(new File("bien.png"));
+                        //g.drawImage(bien, 365, 100, 130, 130, null);
                         
-                        /**
-                         * @deprecated
-                         */
-                        //Image mal = ImageIO.read(new File("mal.png"));
-                        //g.drawImage(mal, 365, 97, 130, 130, null);
+                        //Image regular = ImageIO.read(new File("regular.png"));
+                        //g.drawImage(regular, 380, 111, 102, 102, null);
+
+                        Image mal = ImageIO.read(new File("mal.png"));
+                        g.drawImage(mal, 365, 97, 130, 130, null);
                         
                         break;
                     }
@@ -1190,12 +1200,11 @@ public class Panel extends JFrame implements ActionListener{
         retoYaEnviado.setVisible(false);
         autoReto.setVisible(false);
         actualizarLista.setVisible(false);
-        temporalUno.setVisible(false);
-        temporalDos.setVisible(false);
         anuncioGanador.setVisible(false);
         nombreGanador.setVisible(false);
         victoria.setVisible(false);
         derrota.setVisible(false);
+        empate.setVisible(false);
         queHacer.setVisible(false);
         verRanking.setVisible(false);
         otroReto.setVisible(false);
@@ -1210,6 +1219,10 @@ public class Panel extends JFrame implements ActionListener{
         retoAceptado.setVisible(false);
         retoRechazado.setVisible(false);
         retoRecibido.setVisible(false);
+        condiciones.setVisible(false);
+        aceptarReto.setVisible(false);
+        rechazarReto.setVisible(false);
+        tipoVictoria.setVisible(false);
         
         tu.setVisible(false);
         tuContrincante.setVisible(false);
@@ -1224,7 +1237,7 @@ public class Panel extends JFrame implements ActionListener{
         papelRival.setVisible(false);
         tijeraRival.setVisible(false);
         tiempoRestante.setVisible(false);
-        cantidadTiempoRestante.setVisible(false);
+        barraTiempoRestante.setVisible(false);
         
         try{ Cliente.getDialogVerRankings().setVisible(false); }catch(Exception ex){};  
         try{ Cliente.getDialogMisRetos().setVisible(false); }catch(Exception ex){};
@@ -1320,19 +1333,33 @@ public class Panel extends JFrame implements ActionListener{
             setActualizarListaPulsado(true);
             setActualizarListaPulsado(false);
             
-        }else if(e.getSource() == temporalUno){
+        }else if(e.getSource() == aceptarReto){
             
-            setTemporalUnoPulsado(true);
-            setTipoPanel(4);
-            cambiaPanel(4);
-            setTemporalUnoPulsado(false);
+            setAceptarRetoPulsado(true);
+            ocultarTodosLosElementos();
+            setAceptarRetoPulsado(false);
+        
+        }else if(e.getSource() == rechazarReto){
             
-        }else if(e.getSource() == temporalDos){
+            setRechazarRetoPulsado(true);
+            setTipoPanel(3);
+            cambiaPanel(3);
+            setRechazarRetoPulsado(false);
+        
+        }else if(e.getSource() == miPiedra){
             
-            setTemporalDosPulsado(true);
-            setTipoPanel(6);
-            cambiaPanel(6);
-            setTemporalDosPulsado(false);
+            setMiPiedraPulsado(true);
+            setMiPiedraPulsado(false);
+            
+        }else if(e.getSource() == miPapel){
+            
+            setMiPapelPulsado(true);
+            setMiPapelPulsado(false);
+            
+        }else if(e.getSource() == miTijera){
+            
+            setMiTijeraPulsado(true);
+            setMiTijeraPulsado(false);
             
         }else if(e.getSource() == otroReto){
             
@@ -1373,6 +1400,17 @@ public class Panel extends JFrame implements ActionListener{
             
         }
     }
+    
+    public static class RotacionEspejo extends JProgressBar{
+        
+        @Override
+        public void paintComponent(Graphics g){
+            Graphics2D gx = (Graphics2D) g;
+            gx.rotate(Math.PI, getX() + getWidth()/2, getY() + getHeight()/2);
+            super.paintComponent(g);
+        }
+    }
+    
     
     //Setters y getters
     
@@ -1416,10 +1454,6 @@ public class Panel extends JFrame implements ActionListener{
         this.jugadoresConectados = jugadoresConectados;
     }
     
-    public String getJugadoresConectados(){
-        return jugadoresConectados;
-    }
-    
     public void setAceptarRegistroUsuarioPulsado(boolean aceptarRegistroUsuarioPulsado) {
         this.aceptarRegistroUsuarioPulsado = aceptarRegistroUsuarioPulsado;
     }
@@ -1431,7 +1465,7 @@ public class Panel extends JFrame implements ActionListener{
     public boolean isRegistrateAquiPulsado() {
         return registrateAquiPulsado;
     }
-
+    
     public void setRegistrateAquiPulsado(boolean registrateAquiPulsado) {
         this.registrateAquiPulsado = registrateAquiPulsado;
     }
@@ -1447,115 +1481,83 @@ public class Panel extends JFrame implements ActionListener{
     public boolean isVolverAtrasPulsado(){
         return volverAtrasPulsado;
     }
-
+    
     public String getPassRegistro() {
         return passRegistro;
     }
-
+    
     public void setPassRegistro(String passRegistro) {
         this.passRegistro = passRegistro;
     }
-
+    
     public String getPassConfirmRegistro() {
         return passConfirmRegistro;
     }
-
+    
     public void setPassConfirmRegistro(String passConfirmRegistro) {
         this.passConfirmRegistro = passConfirmRegistro;
     }
-
+    
     public JLabel getDatosIncompletos() {
         return datosIncompletos;
     }
-
-    public void setDatosIncompletos(JLabel datosIncompletos) {
-        this.datosIncompletos = datosIncompletos;
-    }
-
+    
     public JLabel getDatosIncorrectos() {
         return datosIncorrectos;
-    }
-
-    public void setDatosIncorrectos(JLabel datosIncorrectos) {
-        this.datosIncorrectos = datosIncorrectos;
     }
 
     public JLabel getDatosIncompletos2() {
         return datosIncompletos2;
     }
 
-    public void setDatosIncompletos2(JLabel datosIncompletos2) {
-        this.datosIncompletos2 = datosIncompletos2;
-    }
-
     public JLabel getPassNoCoincidente() {
         return passNoCoincidente;
-    }
-
-    public void setPassNoCoincidente(JLabel passNoCoincidente) {
-        this.passNoCoincidente = passNoCoincidente;
     }
 
     public JLabel getUsuarioYaExiste() {
         return usuarioYaExiste;
     }
 
-    public void setUsuarioYaExiste(JLabel usuarioYaExiste) {
-        this.usuarioYaExiste = usuarioYaExiste;
-    }
-
     public JLabel getRestriccionesPassword() {
         return restriccionesPassword;
-    }
-
-    public void setRestriccionesPassword(JLabel restriccionesPassword) {
-        this.restriccionesPassword = restriccionesPassword;
     }
 
     public JLabel getSimbolosProhibidos() {
         return simbolosProhibidos;
     }
-
-    public void setSimbolosProhibidos(JLabel simbolosProhibidos) {
-        this.simbolosProhibidos = simbolosProhibidos;
-    }
-
+    
     public JLabel getRegistroCompletado() {
         return registroCompletado;
     }
-
-    public void setRegistroCompletado(JLabel registroCompletado) {
-        this.registroCompletado = registroCompletado;
-    }
-
+    
     public boolean isSalirDelJuegoPulsado() {
         return salirDelJuegoPulsado;
     }
-
+    
     public void setSalirDelJuegoPulsado(boolean salirDelJuegoPulsado) {
         this.salirDelJuegoPulsado = salirDelJuegoPulsado;
     }
-
+    
     public static boolean isLanzarRetoPulsado() {
         return lanzarRetoPulsado;
     }
-
+    
     public static void setLanzarRetoPulsado(boolean aLanzarRetoPulsado) {
         lanzarRetoPulsado = aLanzarRetoPulsado;
     }
-
+    
     public String getModalidad() {
         return modalidad;
     }
-
+    
     public void setModalidad(String modalidad) {
         this.modalidad = modalidad;
     }
-
+    
     public String getNumTandas() {
         return numTandas;
     }
-
+    
     public void setNumTandas(String numTandas) {
         this.numTandas = numTandas;
     }
@@ -1571,201 +1573,213 @@ public class Panel extends JFrame implements ActionListener{
     public String getOponenteReto() {
         return oponenteReto;
     }
-
+    
     public void setOponenteReto(String oponenteReto) {
         this.oponenteReto = oponenteReto;
     }
-
+    
     public JLabel getLanzarRetoCompletado() {
         return lanzarRetoCompletado;
     }
-
-    public void setLanzarRetoCompletado(JLabel lanzarRetoCompletado) {
-        this.lanzarRetoCompletado = lanzarRetoCompletado;
-    }
-
+    
     public JLabel getAjustesIncompletos() {
         return ajustesIncompletos;
     }
-
-    public void setAjustesIncompletos(JLabel ajustesIncompletos) {
-        this.ajustesIncompletos = ajustesIncompletos;
-    }
-
+    
     public JLabel getUsuarioNoDisponible() {
         return usuarioNoDisponible;
     }
-
-    public void setUsuarioNoDisponible(JLabel usuarioNoDisponible) {
-        this.usuarioNoDisponible = usuarioNoDisponible;
-    }
-
+    
     public JLabel getRetoYaEnviado() {
         return retoYaEnviado;
     }
-
-    public void setRetoYaEnviado(JLabel retoYaEnviado) {
-        this.retoYaEnviado = retoYaEnviado;
-    }
-
+    
     public static boolean isActualizarListaPulsado() {
         return actualizarListaPulsado;
     }
-
+    
     public static void setActualizarListaPulsado(boolean aActualizarListaPulsado) {
         actualizarListaPulsado = aActualizarListaPulsado;
     }
-
-    public boolean isTemporalDosPulsado() {
-        return temporalDosPulsado;
-    }
-
-    public void setTemporalDosPulsado(boolean temporalDosPulsado) {
-        this.temporalDosPulsado = temporalDosPulsado;
-    }
-
+    
     public boolean isOtroRetoPulsado() {
         return otroRetoPulsado;
     }
-
+    
     public void setOtroRetoPulsado(boolean otroRetoPulsado) {
         this.otroRetoPulsado = otroRetoPulsado;
     }
-
+    
     public boolean isCerrarSesionPulsado() {
         return cerrarSesionPulsado;
     }
-
+    
     public void setCerrarSesionPulsado(boolean cerrarSesionPulsado) {
         this.cerrarSesionPulsado = cerrarSesionPulsado;
     }
-
+    
     public boolean isVerRankingPulsado() {
         return verRankingPulsado;
     }
-
+    
     public void setVerRankingPulsado(boolean verRankingPulsado) {
         this.verRankingPulsado = verRankingPulsado;
     }
-
+    
     public String getFiltroRanking() {
         return filtroRanking;
     }
-
+    
     public void setFiltroRanking(String filtroRanking) {
         this.filtroRanking = filtroRanking;
     }
-
+    
     public boolean isActualizarRankingsPulsado() {
         return actualizarRankingsPulsado;
     }
-
+    
     public void setActualizarRankingsPulsado(boolean actualizarRankingsPulsado) {
         this.actualizarRankingsPulsado = actualizarRankingsPulsado;
     }
-
+    
     public boolean isVolverDelRankingPulsado() {
         return volverDelRankingPulsado;
     }
-
+    
     public void setVolverDelRankingPulsado(boolean volverDelRankingPulsado) {
         this.volverDelRankingPulsado = volverDelRankingPulsado;
     }
-
+    
     public JLabel getTipoRankingNoElegido() {
         return tipoRankingNoElegido;
     }
-
-    public void setTipoRankingNoElegido(JLabel tipoRankingNoElegido) {
-        this.tipoRankingNoElegido = tipoRankingNoElegido;
-    }
-
+    
     public JLabel getActualizarTablaCompletado() {
         return actualizarTablaCompletado;
     }
-
-    public void setActualizarTablaCompletado(JLabel actualizarTablaCompletado) {
-        this.actualizarTablaCompletado = actualizarTablaCompletado;
-    }
-
+    
     public JLabel getAutoReto() {
         return autoReto;
     }
-
-    public void setAutoReto(JLabel autoReto) {
-        this.autoReto = autoReto;
-    }
-
-    public boolean isTemporalUnoPulsado() {
-        return temporalUnoPulsado;
-    }
-
-    public void setTemporalUnoPulsado(boolean temporalUnoPulsado) {
-        this.temporalUnoPulsado = temporalUnoPulsado;
-    }
-
+    
     public static JButton getActualizarRankings() {
         return actualizarRankings;
     }
-
+    
     public static void setActualizarRankings(JButton aActualizarRankings) {
         actualizarRankings = aActualizarRankings;
     }
-
+    
     public JLabel getInicioSesionDoble() {
         return inicioSesionDoble;
     }
     
-    public void setInicioSesionDoble(JLabel inicioSesionDoble) {
-        this.inicioSesionDoble = inicioSesionDoble;
-    }
-
-    public static JButton getLanzarReto() {
-        return lanzarReto;
-    }
-
-    public static void setLanzarReto(JButton aLanzarReto) {
-        lanzarReto = aLanzarReto;
-    }
-
     public JLabel getAvisoErrorPosicion() {
         return avisoErrorPosicion;
     }
-
-    public void setAvisoErrorPosicion(JLabel avisoErrorPosicion) {
-        this.avisoErrorPosicion = avisoErrorPosicion;
-    }
-
-}
-
-//Clase que uso para ciertos componentes que deben estar al frente (explicar mejor para Javadoc)
-class AlFrente extends JDialog{
-    private static JLabel segundosPrevia = null;
-    private static JPanel miniPanel = null;
     
-    public AlFrente(){
-        
-        miniPanel = new JPanel();       
-        miniPanel.setLayout(null);
-        
-        segundosPrevia = new JLabel();
-        segundosPrevia.setText("10");
-        segundosPrevia.setFont(new Font("Arial", Font.PLAIN, 50));
-        segundosPrevia.setBounds(0, -22, 100, 100);
-        segundosPrevia.setForeground(Color.BLUE);
-        segundosPrevia.setVisible(true);
-        miniPanel.add(segundosPrevia);
-        
-        this.add(miniPanel);
-        
+    public JLabel getRetoRecibido() {
+        return retoRecibido;
     }
     
-    public static JLabel getSegundosPrevia() {
-        return segundosPrevia;
+    public JLabel getCondiciones() {
+        return condiciones;
+    }
+    
+    public JButton getAceptarReto() {
+        return aceptarReto;
+    }
+    
+    public JButton getRechazarReto() {
+        return rechazarReto;
+    }
+    
+    public boolean isAceptarRetoPulsado() {
+        return aceptarRetoPulsado;
+    }
+    
+    public void setAceptarRetoPulsado(boolean aceptarRetoPulsado) {
+        this.aceptarRetoPulsado = aceptarRetoPulsado;
+    }
+    
+    public void setRechazarRetoPulsado(boolean rechazarRetoPulsado) {
+        this.rechazarRetoPulsado = rechazarRetoPulsado;
+    }
+    
+    public JLabel getRetoAceptado() {
+        return retoAceptado;
+    }
+    
+    public JLabel getNumTandasRestantes() {
+        return numTandasRestantes;
     }
 
-    public static void setSegundosPrevia(JLabel aSegundosPrevia) {
-        segundosPrevia = aSegundosPrevia;
+    public JLabel getTipoVictoria() {
+        return tipoVictoria;
+    }
+    
+    public void setMiPiedraPulsado(boolean miPiedraPulsado) {
+        this.miPiedraPulsado = miPiedraPulsado;
+    }
+    
+    public boolean isMiPiedraPulsado() {
+        return miPiedraPulsado;
+    }
+    
+    public boolean isMiPapelPulsado() {
+        return miPapelPulsado;
+    }
+    
+    public void setMiPapelPulsado(boolean miPapelPulsado) {
+        this.miPapelPulsado = miPapelPulsado;
+    }
+    
+    public boolean isMiTijeraPulsado() {
+        return miTijeraPulsado;
+    }
+    
+    public void setMiTijeraPulsado(boolean miTijeraPulsado) {
+        this.miTijeraPulsado = miTijeraPulsado;
+    }
+    
+    public JProgressBar getBarraTiempoRestante() {
+        return barraTiempoRestante;
     }
 
+    public JLabel getBienvenido() {
+        return bienvenido;
+    }
+
+    public boolean isPiedraRivalPulsado() {
+        return piedraRivalPulsado;
+    }
+
+    public void setPiedraRivalPulsado(boolean piedraRivalPulsado) {
+        this.piedraRivalPulsado = piedraRivalPulsado;
+    }
+
+    public boolean isPapelRivalPulsado() {
+        return papelRivalPulsado;
+    }
+
+    public void setPapelRivalPulsado(boolean papelRivalPulsado) {
+        this.papelRivalPulsado = papelRivalPulsado;
+    }
+
+    public boolean isTijeraRivalPulsado() {
+        return tijeraRivalPulsado;
+    }
+
+    public void setTijeraRivalPulsado(boolean tijeraRivalPulsado) {
+        this.tijeraRivalPulsado = tijeraRivalPulsado;
+    }
+
+    public JLabel getNumTandasGanadas() {
+        return numTandasGanadas;
+    }
+
+    public void setNumTandasGanadas(JLabel numTandasGanadas) {
+        this.numTandasGanadas = numTandasGanadas;
+    }
+    
 }

@@ -24,7 +24,7 @@ import static practica.pkgfinal.mtpa.Connection.ficheroUsuariosRetados;
  * Clase que permite crear una tabla personalizada mediante AbstractTableModel.
  * Se usa para crear las diferentes tablas de mi programa
  * @author Nelson Tuesta Fernández
- * @version 4.0
+ * @version 6.0
  * @since 05/09/2020
  */
 public class TablaPersonalizada extends JDialog{
@@ -133,7 +133,6 @@ public class TablaPersonalizada extends JDialog{
                 @Override
                 public void tableChanged(TableModelEvent e) {
                     if(e.getType() == TableModelEvent.UPDATE){
-                        //final int fila = e.getFirstRow();
                         final int columna = 2;
                         
                         for(int i=(arrayPartidasGanadas.length)-1; i>=0; i--){

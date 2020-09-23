@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,12 +36,14 @@ import static practica.pkgfinal.mtpa.Connection.ficheroUsuariosRetados;
  * y el servidor se encarga de validarlas y reenviar el resultado a la Clase Cliente
  * mediante Sockets TCP
  * @author Nelson Tuesta Fernández
- * @version 4.0
+ * @version 6.0
  * @since 05/09/2020
  */
 public class Servidor {
 
     private static ArrayList<Connection> usuariosConectados = new ArrayList<>();
+    private static String lineaUsuariosConectados;
+    //private static int index;
     private static Connection c;
     
     /**
@@ -61,7 +64,6 @@ public class Servidor {
             }
             
             File existeFicheroUsuariosRetados = new File(ficheroUsuariosRetados);
-            
             if(existeFicheroUsuariosRetados.exists()){
                 existeFicheroUsuariosRetados.delete();
             }
@@ -71,6 +73,7 @@ public class Servidor {
             
             bw.write("Nombre del rival;Modalidad;Nº tandas;Tiempo (s)\n");
             bw.close();
+
             
             while(true){
                 Socket clientSocket = listenSocket.accept();
@@ -119,13 +122,20 @@ public class Servidor {
     public static ArrayList<Connection> getUsuariosConectados() {
         return usuariosConectados;
     }
+    public static String getLineaUsuariosConectados() {
+        return lineaUsuariosConectados;
+    }
+
+    public static void setLineaUsuariosConectados(String aLineaUsuariosConectados) {
+        lineaUsuariosConectados = aLineaUsuariosConectados;
+    }
 }
 
 /**
  * Clase que lanza el hilo con el que empieza el socket del Servidor y que tiene
  * el método run
  * @author Nelson Tuesta Fernández
- * @version 4.0
+ * @version 6.0
  * @since 05/09/2020
  */
 class Connection extends Thread{
@@ -145,6 +155,7 @@ class Connection extends Thread{
     public static String ficheroUsuariosConectados = "Usuarios conectados.txt";
     
     public static String ficheroUsuariosRetados = "Usuarios a los que he retado.txt";
+    
     
     /**
      * Estos cuatro objetos nos sirven para controlar los datos que se reciben y
@@ -181,6 +192,7 @@ class Connection extends Thread{
     static String indicarNumTandas = "";
     static String indicarTiempo = "";
     static String indicarOponenteReto = "";
+    static String indicarNombreDelPanel = "";
     
     /**
      * Estos objetos de tipo String nos servirán para recuperar los valores del
@@ -190,6 +202,14 @@ class Connection extends Thread{
     static String consultarficheroRankings = "";
     
     static String indicarNumJugadores = "";
+        
+    private int index;
+    private String nick;
+    
+    public Connection(int index, String nick){
+        this.index = index;
+        this.nick = nick;
+    }
     
     /**
      * Constructor de la clase Connection
@@ -228,6 +248,7 @@ class Connection extends Thread{
                 String buscarErroresInicioSesion = "";
                 String buscarErroresRegistro = "";
                 String buscarErroresLanzarReto = "";
+                String buscarErroresAutoReto = "";
                 String buscarErroresTipoRanking = "";
                 //String buscarErroresNumeroJugadores = "";
                 String numeroJugadores = "";
@@ -276,15 +297,14 @@ class Connection extends Thread{
                         break;
                         
                     case "comprobarLanzarReto":
-                        System.out.print(" ");
-                        System.out.print("\b");
                         
                         indicarModalidad = in.readUTF();
                         indicarNumTandas = in.readUTF();
                         indicarTiempo = in.readUTF();
                         indicarOponenteReto = in.readUTF();
+                        indicarNombreDelPanel = in.readUTF();
                         
-                        buscarErroresLanzarReto = comprobarLanzarReto(indicarModalidad, indicarNumTandas, indicarTiempo, indicarOponenteReto);
+                        buscarErroresLanzarReto = comprobarLanzarReto(indicarModalidad, indicarNumTandas, indicarTiempo, indicarOponenteReto, indicarNombreDelPanel);
                         out.writeUTF(buscarErroresLanzarReto);
                         out.flush();
                         break;
@@ -327,60 +347,6 @@ class Connection extends Thread{
             }
         }
     };
-    
-    /**
-     * Este objeto ArrayList nos servirá para almacenar los jugadores que están
-     * conectados en el sistema (se liberará un jugador cuando cierre la sesión
-     * o salga del programa)
-     */
-    //private static ArrayList<Servidor> jugadoresConectados = new ArrayList<>();
-    
-    /**
-     * Este método sirve para llamar a la lista de los jugadores conectados
-     * @return La lista de los jugadores conectados
-     */
-    /*
-    public static ArrayList<Servidor> devuelveJugadores(){
-        return jugadoresConectados;
-    }*/
-    
-    /**
-     * Este método sirve para marcar los jugadores como online en el sistema (en
-     * realidad lo que hace es añadirlos al ArrayList)
-     * @param sv El objeto de tipo servidor a añadir al ArrayList
-     * @return El estado de éxito (1) o fracaso (-1) de la operación
-     */
-    /*public static boolean marcarJugadoresOnline(Servidor sv){
-        boolean estado = false;
-        estado = jugadoresConectados.add(sv);
-        return estado;
-    }*/
-    
-    /**
-     * Este método sirve para marcar los jugadores como offline en el sistema (en
-     * realidad lo que hace es quitarlos del ArrayList)
-     * @param sv El objeto de tipo servidor a quitar del ArrayList
-     * @return El estado de éxito (1) o fracaso (-1) de la operación
-     */
-    /*public static boolean marcarJugadoresOffline(Servidor sv){
-        boolean estado = false;
-        estado = jugadoresConectados.remove(sv);
-        return estado;
-    }*/
-    
-    /**
-     * Este método sirve para buscar a un jugador en el sistema
-     * @return El estado de éxito (1) o fracaso (-1) de la operación
-     */
-    /*public static Servidor buscaJugador(){
-        Servidor sv = null;
-        
-        for(int i=0; i< jugadoresConectados.size(); i++){
-            sv = jugadoresConectados.get(i);
-        }
-        
-        return sv;
-    }*/
     
     /**
      * Este método sirve para comprobar el inicio de sesión de un usuario en el sistema
@@ -716,43 +682,54 @@ class Connection extends Thread{
      * @return El tipo de error que se ha producido (si todo ha ido bien este valor
      * será "ningunError")
      */
-    public static String comprobarLanzarReto(String modalidad, String numTandas, String tiempo, String oponenteReto){
+    public static String comprobarLanzarReto(String modalidad, String numTandas, String tiempo, String oponenteReto, String nombreDelPanel){
         String tipoErrorLanzarReto = "Error";
         
         FileReader fr = null;
         BufferedReader br = null;
         FileWriter fw = null;
         BufferedWriter bw = null;
+        StringTokenizer st = null;
         String linea = "";
-        
+                
         boolean usuarioOnline = false;
         boolean usuarioYaRetado = false;
-        boolean autoReto = false;
+        
+        try{
+            Thread.sleep(100);
+        }catch(InterruptedException ie){
+            System.out.println(ie.toString());
+        }
+
         
         try{
             fr = new FileReader(ficheroUsuariosConectados);
             br = new BufferedReader(fr);
             
             while((linea = br.readLine()) != null){
+                
                 if(linea.equals("#" + oponenteReto)){
                     usuarioOnline = true;
                 }
+                
             }
+            
+            br.close();
+            
         }catch(IOException ioe){
             System.out.println(ioe.toString());
         }
-        
+                
         if(modalidad.equals("--Modalidad--") || numTandas.equals("--Nº tandas--") || tiempo.equals("--Tiempo--") || oponenteReto.equals("")){
             tipoErrorLanzarReto = "ajustesIncompletos";
             
         }else if(!usuarioOnline){
             tipoErrorLanzarReto = "usuarioNoDisponible";
             
-        }else if(usuarioYaRetado){ //REVISAR. Con el planteamiento actual se pueden cruzar los retos de diversas personas
+        }else if(usuarioYaRetado){
             tipoErrorLanzarReto = "retoYaEnviado";
             
-        //}else if(oponenteReto.equals(usuario)){ //REVISAR. No funciona si el último usuario que se conecta es otro
-        }else if(autoReto){
+        }else if(nombreDelPanel.equals("Buscando oponentes (" + oponenteReto + ")")){
             tipoErrorLanzarReto = "autoReto";
             
         }else{

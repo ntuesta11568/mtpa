@@ -11,7 +11,9 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.FileWriter;
 
 import java.net.Socket;
@@ -27,7 +29,7 @@ import static practica.pkgfinal.mtpa.Connection.ficheroUsuariosConectados;
  * la que se encarga de controlar los elementos de Java Swing que le llegan desde
  * la Clase Panel mediante setters y getters
  * @author Nelson Tuesta Fernández
- * @version 4.0
+ * @version 6.0
  * @since 05/09/2020
  */
 public class Cliente{
@@ -61,8 +63,7 @@ public class Cliente{
     private static JDialog dialogUsuariosConectados = new JDialog(miPanel, false);
     private static JDialog dialogMisRetos = new JDialog(miPanel, false);
     private static JDialog dialogVerRankings = new JDialog(miPanel, false);
-    private static JDialog dialogSegundosPrevia = new JDialog(miPanel, false);
-    
+    private static JDialog dialogTiempoRestante = new JDialog(miPanel, false);
     
     
     /**
@@ -81,12 +82,14 @@ public class Cliente{
     private static String numTandas;
     private static String tiempo;
     private static String oponenteReto;
+    private static String nombreDelPanel;
     private static String tipoRankingElegido;
     private static String numJugadoresString;
     private static int numJugadoresInt;
     private static int numMisRetos;
     private static int numConexiones;
     private static int numRankings;
+    private static String retador;
     
     private static boolean retoLanzadoConExito;
     private static boolean irAlPanelCuatro;
@@ -113,8 +116,7 @@ public class Cliente{
         boolean volverAtras = false;
         boolean lanzarUnReto = false;
         boolean actualizarJugadoresConectados = false;
-        boolean panelCinco = false;
-        boolean panelSeis = false;
+        boolean retoRecibido = false;
         boolean conectar = false;
         boolean desconectar = false;
         
@@ -142,16 +144,11 @@ public class Cliente{
                 @Override
                 public void componentMoved(ComponentEvent e){
                     try{
-                        /*
-                        dialogMisRetos.setAlwaysOnTop(true);
-                        getDialogUsuariosConectados().setAlwaysOnTop(true);
-                        dialogVerRankings.setAlwaysOnTop(true);
-                        dialogSegundosPrevia.setAlwaysOnTop(true);
-                        */
+
                         dialogMisRetos.toFront();
                         getDialogUsuariosConectados().toFront();
                         dialogVerRankings.toFront();
-                        dialogSegundosPrevia.toFront();
+                        dialogTiempoRestante.toFront();
 
                         if(ultimaUbicacion == null && miPanel.isVisible()){
 
@@ -165,7 +162,7 @@ public class Cliente{
                             dialogMisRetos.setLocation(dialogMisRetos.getX() + dx, dialogMisRetos.getY() + dy);
                             getDialogUsuariosConectados().setLocation(getDialogUsuariosConectados().getX() + dx, getDialogUsuariosConectados().getY() + dy);
                             dialogVerRankings.setLocation(dialogVerRankings.getX() + dx, dialogVerRankings.getY() + dy);
-                            dialogSegundosPrevia.setLocation(dialogSegundosPrevia.getX() + dx, dialogSegundosPrevia.getY() + dy);
+                            dialogTiempoRestante.setLocation(dialogTiempoRestante.getX() + dx, dialogTiempoRestante.getY() + dy);
 
                             ultimaUbicacion = nuevaUbicacion;
 
@@ -177,17 +174,11 @@ public class Cliente{
             miPanel.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowIconified(WindowEvent e){
-                    /*
-                    dialogMisRetos.setAlwaysOnTop(false);
-                    getDialogUsuariosConectados().setAlwaysOnTop(false);
-                    dialogVerRankings.setAlwaysOnTop(false);
-                    dialogSegundosPrevia.setAlwaysOnTop(false);
-                    */
+                    
                     dialogMisRetos.toBack();
                     getDialogUsuariosConectados().toBack();
                     dialogVerRankings.toBack();
-                    dialogSegundosPrevia.toBack();
-                    
+                    dialogTiempoRestante.toBack();
                 }
                 
             });
@@ -195,7 +186,7 @@ public class Cliente{
             dialogMisRetos.setLocationRelativeTo(miPanel);
             dialogUsuariosConectados.setLocationRelativeTo(miPanel);
             dialogVerRankings.setLocationRelativeTo(miPanel);
-            dialogSegundosPrevia.setLocationRelativeTo(miPanel);
+            dialogTiempoRestante.setLocationRelativeTo(miPanel);
             
             do{
 
@@ -253,13 +244,27 @@ public class Cliente{
                                         FileWriter fw = null;
                                         BufferedWriter bw = null;
                                         
+                                        FileReader fr = null;
+                                        BufferedReader br = null;
+                                        String linea = "";
+                                                                                
+                                        Cliente.setUsuarioInicioSesion(usuarioInicioSesion);
+                                        
                                         try{
+
                                             fw = new FileWriter(ficheroUsuariosConectados, true);
                                             bw = new BufferedWriter(fw);
+                                            
+                                            numJugadoresString = comprobarNumeroJugadoresConectados(in, out);
+                                            
+                                            Servidor.getUsuariosConectados().add(new Connection(Integer.parseInt(numJugadoresString), usuarioInicioSesion));
                                             
                                             bw.write("#" + usuarioInicioSesion + "\n");
                                             bw.flush();
                                             bw.close();
+                                            
+                                            Cliente.setNumJugadoresString(numJugadoresString);
+                                            //Cliente.setNumJugadoresInt(Integer.parseInt(numJugadoresString));
                                             
                                         }catch(IOException ioe){
                                             System.out.println(ioe.toString());
@@ -356,7 +361,6 @@ public class Cliente{
                                         crear la cuenta*/
                                         miPanel.getUsuarioYaExiste().setText("");
                                         
-                                        
                                         break;
                                         
                                     case "datosIncompletos2":
@@ -402,7 +406,7 @@ public class Cliente{
                         
                         ocultarErrores();
                         System.out.println("Lanzando el panel de configuración de la partida...\n");
-                        miPanel.setTitle("Buscando oponentes");
+                        miPanel.setTitle("Buscando oponentes (" + usuarioInicioSesion + ")");
                         miPanel.setSize(900, 520);
                         miPanel.setLocation(dim.width/2 - miPanel.getSize().width/2, dim.height/2 - miPanel.getSize().height/2);
                         miPanel.setVisible(true);
@@ -410,27 +414,18 @@ public class Cliente{
                         miPanel.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                         setRetoLanzadoConExito(false);
                         
-                        while(miPanel.getTipoPanel() == 3){
+                        while(miPanel.getTipoPanel() == 3 || !retoRecibido){
                             
                             setIrAlPanelCuatro(false);
                             setIrAlPanelSeis(false);
                             
                             lanzarUnReto = miPanel.isLanzarRetoPulsado();
                             actualizarJugadoresConectados = miPanel.isActualizarListaPulsado();
-                            panelCinco = miPanel.isTemporalUnoPulsado();
-                            panelCinco = miPanel.isTemporalDosPulsado();
-                            
                             miPanel.getAvisoErrorPosicion().setVisible(true);
                             
-                            if(panelCinco){
-                                miPanel.setTipoPanel(5);
-                                break;
-                            }
-                            
-                            if(panelSeis){
-                                miPanel.setTipoPanel(6);
-                                break;
-                            }
+                            miPanel.getBienvenido().setText("<html> <body>"
+                            + "Bienvenido <font color=blue>" + "#" + Cliente.getUsuarioInicioSesion()
+                            + "</font> </body> </html>");
                             
                             if(lanzarUnReto){
                                 
@@ -441,8 +436,9 @@ public class Cliente{
                                 numTandas = miPanel.getNumTandas();
                                 tiempo = miPanel.getTiempo();
                                 oponenteReto = miPanel.getOponenteReto();
+                                nombreDelPanel = miPanel.getTitle();
                                 
-                                tipoErrorLanzarReto = comprobarLanzarReto(in, out, modalidad, numTandas, tiempo, oponenteReto);
+                                tipoErrorLanzarReto = comprobarLanzarReto(in, out, modalidad, numTandas, tiempo, oponenteReto, nombreDelPanel);
                                 
                                 switch(tipoErrorLanzarReto){
                                     case "ningunError":
@@ -451,6 +447,8 @@ public class Cliente{
                                         lanzarRetoCompletado = miPanel.getLanzarRetoCompletado();
                                         lanzarRetoCompletado.setVisible(true);
                                         numMisRetos++;
+                                        
+                                        setRetador(usuarioInicioSesion);
                                         
                                         int tmp = numMisRetos-1;
                                         String tituloInstancia = "Instancia " + tmp;
@@ -476,7 +474,12 @@ public class Cliente{
                                         dialogMisRetos.setType(JDialog.Type.UTILITY);
                                         dialogMisRetos.setVisible(true);
                                         miPanel.resetearCampos();
-                                        
+
+                                        System.out.println("Hola #" + usuarioInicioSesion + " Te han retado");
+                                        retoRecibido = true;
+                                        miPanel.setTipoPanel(4);
+                                        miPanel.cambiaPanel(4);
+                                            
                                         break;
                                         
                                     case "ajustesIncompletos":
@@ -552,46 +555,67 @@ public class Cliente{
                     case 4: //Panel previo al juego
                         
                         ocultarErrores();
+                        /*
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException ie) {
+                            System.out.println(ie.toString());
+                        }*/
+                
                         System.out.println("Lanzando el panel previo al juego...\n");
-                        miPanel.setTitle("El juego comenzará en unos segundos");
-                        miPanel.setSize(600, 550);
+                        miPanel.setTitle("Preparando la partida (" + usuarioInicioSesion + ")");
+                        miPanel.setSize(600, 570);
                         miPanel.setLocation(dim.width/2 - miPanel.getSize().width/2, dim.height/2 - miPanel.getSize().height/2);
                         miPanel.setVisible(true);
                         miPanel.setResizable(false);
                         miPanel.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                         
                         int i;
-                        
-                        /*
-                            REVISAR. Mostrar lo de AlFrente cuando sea que te acepten un reto.
-                            Configurar las demás opciones y mostrar los mensajes en función del tipo.
-                            Mostrar las características del reto al recibir uno y botones de aceptar/cancelar.
-                            Enlazar con estos textos al mandar retos
-                        */
-                        dialogSegundosPrevia = new AlFrente();
-                        dialogSegundosPrevia.setSize(60, 60);
-                        dialogSegundosPrevia.setLocation((dim.width/2 - dialogSegundosPrevia.getSize().width/2) - 255,(dim.height/2 - dialogSegundosPrevia.getSize().height/2) + 195);
-                        dialogSegundosPrevia.setUndecorated(true);
-                        dialogSegundosPrevia.setType(JDialog.Type.UTILITY);
-                        dialogSegundosPrevia.setVisible(true);
+                        while(miPanel.getTipoPanel() == 4){
+                            miPanel.getCondiciones().setText("<html> <body>"
+                            + "Éstas son las condiciones del reto. ¿Aceptas?"
+                            + "<br>"
+                            + "<br>"
+                            + "<font color=blue> Modalidad: </font>" + modalidad + "<br>"
+                            + "<font color=blue> Número de tandas: </font>" + numTandas + "<br>"
+                            + "<font color=blue> Tiempo por tanda: </font>" + tiempo + "<font color=blue> segundos </font>"
+                            + "</body> </html>");
 
-                        try{
-                            
-                            for(i=9; i>=0; i--){
-                                Thread.sleep(1000);
-                                AlFrente.getSegundosPrevia().setBounds(16, -22, 100, 100);
-                                AlFrente.getSegundosPrevia().setText("" + i);
-                                
+                            if(retoRecibido){
+                                System.out.print(" ");
+                                System.out.print("\b");
+
+                                miPanel.getRetoRecibido().setText("<html> <body> Has recibido un reto del usuario <font color=blue> #" + getRetador() + "</font> </body> </html>");
+                                miPanel.getRetoRecibido().setVisible(true);
+                                miPanel.getCondiciones().setVisible(true);
+                                miPanel.getAceptarReto().setVisible(true);
+                                miPanel.getRechazarReto().setVisible(true);
+
+                                if(miPanel.isAceptarRetoPulsado()){
+
+                                    miPanel.getRetoAceptado().setVisible(true);
+
+                                    for(i=5; i>=0; i--){
+                                        miPanel.getRetoAceptado().setText("<html> <body>"
+                                        + "El juego comenzará<br>"
+                                        + "automáticamente en <font color=blue> <br>"
+                                        + "&nbsp &nbsp &nbsp " + i + " </font> segundo(s)"
+                                        + "</body> </html>");
+
+                                        try{
+                                            Thread.sleep(1000);
+                                        }catch(InterruptedException ie){
+                                            System.out.println(ie.toString());
+                                        }
+                                    }
+
+                                    miPanel.getRetoAceptado().setVisible(false);
+                                    miPanel.setTipoPanel(5);
+                                    miPanel.cambiaPanel(5);
+                                }
                             }
-                            
-                        }catch(InterruptedException ie){
-                            System.out.println(ie.toString());
                         }
-                        
-                        AlFrente.getSegundosPrevia().setVisible(false);
-                        miPanel.setTipoPanel(5);
-                        miPanel.cambiaPanel(5);
-                        
+
                         break;
                         
                     case 5: //Panel del juego
@@ -604,11 +628,167 @@ public class Cliente{
                         miPanel.setVisible(true);
                         miPanel.setResizable(false);
                         miPanel.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+                        tiempo = transformarTiempoANumero(tiempo);
+                        int tiempoInt = Integer.parseInt(tiempo);
                         
-                        while(miPanel.getTipoPanel() == 5){
+                        numTandas = transformarTandasANumero(numTandas);
+                        int tandasInt = Integer.parseInt(numTandas);
+                        miPanel.getNumTandasRestantes().setText(numTandas);
+                        
+                        dialogTiempoRestante.setSize(130, 30);
+                        miPanel.setLocation(dim.width/2 - miPanel.getSize().width/2, dim.height/2 - miPanel.getSize().height/2);
+                        try {Thread.sleep(300);}catch (InterruptedException ex){System.out.println(ex.toString());}
+                        dialogTiempoRestante.setLocation((dim.width/2 - dialogTiempoRestante.getSize().width/2) + 95,(dim.height/2 - dialogTiempoRestante.getSize().height/2) + 227);
+                        dialogTiempoRestante.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                        
+                        try{
+                            dialogTiempoRestante.setUndecorated(true);
+                            dialogTiempoRestante.setType(JDialog.Type.UTILITY);
+                        }catch(Exception e){}
+                        
+                        dialogTiempoRestante.setVisible(true);
+                        dialogTiempoRestante.add(miPanel.getBarraTiempoRestante());
+                        
+                        //Inicializamos 
+                        Seleccion yo = Seleccion.NADA;
+                        Seleccion rival = Seleccion.NADA;
+                        int tandasGanadas = 0;
+                                                    
+                        if(modalidad.equals("Un total de")){
+                            tandasInt++;
+                            
+                            miPanel.getTipoVictoria().setText("<html> <body>"
+                                    + "Se jugarán un total de " + numTandas + " tandas. ¡Gana más<br>"
+                                    + "tandas que tu rival para ganar la partida!"
+                                    + "</html> <body>");
+                            miPanel.getTipoVictoria().setBounds(100, 362, 500, 45);
+                            miPanel.getTipoVictoria().setVisible(true);
+                            
+                            while(tandasInt > 1){
+                                if(miPanel.isMiPiedraPulsado()){
+                                    yo = Seleccion.PIEDRA;
+                                }else if(miPanel.isMiPapelPulsado()){
+                                    yo = Seleccion.PAPEL;
+                                }else if(miPanel.isMiTijeraPulsado()){
+                                    yo = Seleccion.TIJERAS;
+                                }
+                                
+                                if((yo.equals(Seleccion.PIEDRA) && rival.equals(Seleccion.TIJERAS)) ||
+                                (yo.equals(Seleccion.PAPEL) && rival.equals(Seleccion.PIEDRA)) ||
+                                (yo.equals(Seleccion.TIJERAS) && rival.equals(Seleccion.PAPEL))){
+                                    tandasGanadas++;
+                                    miPanel.getNumTandasGanadas().setText("" + tandasGanadas);
+                                }
+                                
+                                miPanel.getNumTandasRestantes().setText("" + (tandasInt-1));
+                                int j=-1;
+                                miPanel.getBarraTiempoRestante().setMinimum(0);
+                                miPanel.getBarraTiempoRestante().setMaximum(tiempoInt);
+                                miPanel.getBarraTiempoRestante().setVisible(true);
+                                
+                                for(i=tiempoInt; i>=0; i--){
+                                        j++;
+                                        miPanel.getBarraTiempoRestante().setValue(j);
+                                        try{Thread.sleep(1000);}catch(InterruptedException ie){System.out.println(ie.toString());}
+                                }
+                                tandasInt--;
+                            }
+                            
+                            
+                        } else if(modalidad.equals("Al mejor de")){
+                            tandasInt++;
+                            miPanel.getTipoVictoria().setText("<html> <body>"
+                                    + "Se jugará al mejor de " + numTandas + " tandas ganadas. ¡Ga-<br>"
+                                    + "na " + ((tandasInt+1)/2) + " de las " + numTandas + " tandas para ganar la partida!"
+                                    + "</html> <body>");
+                            miPanel.getTipoVictoria().setBounds(90, 362, 500, 45);
+                            miPanel.getTipoVictoria().setVisible(true);
+                            
+                            while(tandasInt > 1){
+                                
+                                if(miPanel.isMiPiedraPulsado()){
+                                    yo = Seleccion.PIEDRA;
+                                }else if(miPanel.isMiPapelPulsado()){
+                                    yo = Seleccion.PAPEL;
+                                }else if(miPanel.isMiTijeraPulsado()){
+                                    yo = Seleccion.TIJERAS;
+                                }
+                                
+                                if((yo.equals(Seleccion.PIEDRA) && rival.equals(Seleccion.TIJERAS)) ||
+                                (yo.equals(Seleccion.PAPEL) && rival.equals(Seleccion.PIEDRA)) ||
+                                (yo.equals(Seleccion.TIJERAS) && rival.equals(Seleccion.PAPEL))){
+                                    tandasGanadas++;
+                                    miPanel.getNumTandasGanadas().setText("" + tandasGanadas);
+                                }
+                                
+                                miPanel.getNumTandasRestantes().setText("" + (tandasInt-1) + " (como máximo)");
+                                
+                                int j=-1;
+                                miPanel.getBarraTiempoRestante().setMinimum(0);
+                                miPanel.getBarraTiempoRestante().setMaximum(tiempoInt);
+                                miPanel.getBarraTiempoRestante().setVisible(true);
+                                
+                                for(i=tiempoInt; i>=0; i--){
+                                        j++;
+                                        miPanel.getBarraTiempoRestante().setValue(j);
+                                        try{Thread.sleep(1000);}catch(InterruptedException ie){System.out.println(ie.toString());}
+                                }
+                                tandasInt--;
+                            }
+                            
+                        }else if(modalidad.equals("El que llegue antes a")){
+                            
+                            miPanel.getTipoVictoria().setText("<html> <body>"
+                                    + "¡Consigue ganar " + numTandas + " tandas antes que tu rival<br>"
+                                    + "&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp "
+                                    + "para ganar la partida! </html> </body>");
+                            miPanel.getTipoVictoria().setBounds(95, 362, 500, 45);
+                            miPanel.getTipoVictoria().setVisible(true);
+                            
+                            int tmp = (tandasInt*2)-1;
+                            miPanel.getNumTandasRestantes().setText("" + tmp + " (como máximo)");
+                            tandasInt++;
+                            tmp++;
+                            
+                            while(tmp > 1){
+                                
+                                if(miPanel.isMiPiedraPulsado()){
+                                    yo = Seleccion.PIEDRA;
+                                }else if(miPanel.isMiPapelPulsado()){
+                                    yo = Seleccion.PAPEL;
+                                }else if(miPanel.isMiTijeraPulsado()){
+                                    yo = Seleccion.TIJERAS;
+                                }
+                                
+                                if((yo.equals(Seleccion.PIEDRA) && rival.equals(Seleccion.TIJERAS)) ||
+                                (yo.equals(Seleccion.PAPEL) && rival.equals(Seleccion.PIEDRA)) ||
+                                (yo.equals(Seleccion.TIJERAS) && rival.equals(Seleccion.PAPEL))){
+                                    tandasGanadas++;
+                                    miPanel.getNumTandasGanadas().setText("" + tandasGanadas);
+                                }
+                                
+                                miPanel.getNumTandasRestantes().setText("" + (tmp-1) + " (como máximo)");
+                                
+                                int j=-1;
+                                miPanel.getBarraTiempoRestante().setMinimum(0);
+                                miPanel.getBarraTiempoRestante().setMaximum(tiempoInt);
+                                miPanel.getBarraTiempoRestante().setVisible(true);
+                                
+                                for(i=tiempoInt; i>=0; i--){
+                                        j++;
+                                        miPanel.getBarraTiempoRestante().setValue(j);
+                                        try{Thread.sleep(1000);}catch(InterruptedException ie){System.out.println(ie.toString());}
+                                }
+                                tmp--;
+                            }
                             
                         }
                         
+                        dialogTiempoRestante.setVisible(false);
+                        miPanel.getBarraTiempoRestante().setVisible(false);
+                        miPanel.setTipoPanel(6);
+                        miPanel.cambiaPanel(6);
                         break;
 
                         
@@ -696,9 +876,7 @@ public class Cliente{
                                         if(numRankings!=1 && dialogVerRankings.getTitle().equals(tituloInstancia)){
                                             dialogVerRankings.dispose();
                                         }
-                                        
-                                        //NO FUNCIONA. Tampoco funciona el de los usuarios conectados
-                                        
+                                                                                
                                         dialogVerRankings = new TablaPersonalizada(4);
                                         dialogVerRankings.setSize(321, 180);
                                         miPanel.setLocation(dim.width/2 - miPanel.getSize().width/2, dim.height/2 - miPanel.getSize().height/2);
@@ -753,7 +931,41 @@ public class Cliente{
             System.out.println(ioe.toString());
         }
     }
-
+    
+    
+    public static String transformarTiempoANumero(String tiempo){
+        switch(tiempo){
+            case "cinco": tiempo = "5"; break;
+            case "seis": tiempo = "6"; break;
+            case "siete": tiempo = "7"; break;
+            case "ocho": tiempo = "8"; break;
+            case "nueve": tiempo = "9"; break;
+            case "diez": tiempo = "10"; break;
+            case "once": tiempo = "11"; break;
+            case "doce": tiempo = "12"; break;   
+            case "trece": tiempo = "13"; break;
+            case "catorce": tiempo = "14"; break;
+            case "quince": tiempo = "15"; break;
+            case "dieciséis": tiempo = "16"; break;  
+            case "diecisiete": tiempo = "17"; break;
+            case "dieciocho": tiempo = "18"; break;
+            case "diecinueve": tiempo = "19"; break;
+            case "veinte": tiempo = "20"; break;
+        }
+        return tiempo;
+    }
+    
+    public static String transformarTandasANumero(String numTandas){
+        switch (numTandas) {
+            case "tres": numTandas = "3"; break; 
+            case "cinco": numTandas = "5"; break;
+            case "siete": numTandas = "7"; break;
+            case "nueve": numTandas = "9"; break; 
+            case "once": numTandas = "11"; break;
+        }
+        return numTandas;
+    }
+    
     /**
      * Método para salir del juego y cerrar la conexión con el servidor
      * @param in El DataInputStream que conecta con la clase Servidor
@@ -890,11 +1102,12 @@ public class Cliente{
      * @param numTandas El número de tandas de la partida
      * @param tiempo El tiempo en segundos por tanda de la partida
      * @param oponenteReto El nick oponente con el que el usuario quiere enfrentarse
+     * @param nombreDelPanel El título del panel con el que se llama a este método (útil para detectar autoRetos)
      * @return El tipo de error que se ha producido (si todo va bien este valor
      * será "ningunError")
      * @throws IOException Cuando se produzca un error en la llamada a los InputStream
      */
-    public static String comprobarLanzarReto(DataInputStream in, DataOutputStream out, String modalidad, String numTandas, String tiempo, String oponenteReto) throws IOException{
+    public static String comprobarLanzarReto(DataInputStream in, DataOutputStream out, String modalidad, String numTandas, String tiempo, String oponenteReto, String nombreDelPanel) throws IOException{
         
         DataInputStream in2 = in;
         DataOutputStream out2 = out;
@@ -909,6 +1122,8 @@ public class Cliente{
         out2.writeUTF(tiempo);
         out2.flush();
         out2.writeUTF(oponenteReto);
+        out2.flush();
+        out2.writeUTF(nombreDelPanel);
         out2.flush();
                 
         String errorStringLanzarReto = in2.readUTF();
@@ -961,8 +1176,15 @@ public class Cliente{
         return nickJugadores;
     }
     
-    
     //Todos los métodos que hay a partir de aquí son getters y setters
+    
+    public static void setNumJugadoresString(String aNumJugadoresString) {
+        numJugadoresString = aNumJugadoresString;
+    }
+    
+    public static String getNumJugadoresString(){
+        return numJugadoresString;
+    }
     
     public static String getUsuarioInicioSesion() {
         return usuarioInicioSesion;
@@ -1123,4 +1345,13 @@ public class Cliente{
     public static void setNumMisRetos(int aNumMisRetos) {
         numMisRetos = aNumMisRetos;
     }
+
+    public static String getRetador() {
+        return retador;
+    }
+
+    public static void setRetador(String aRetador) {
+        retador = aRetador;
+    }
+    
 }
